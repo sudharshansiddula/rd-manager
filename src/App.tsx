@@ -6,7 +6,8 @@ import {
   Settings, 
   ShieldCheck,
   Languages,
-  LogOut
+  LogOut,
+  Menu
 } from 'lucide-react';
 import './App.css';
 import { DashboardView } from './components/views/DashboardView';
@@ -29,6 +30,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [navParams, setNavParams] = useState<any>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -91,8 +93,14 @@ function App() {
 
   return (
     <div className="app-layout">
+      {/* Mobile Sidebar Overlay */}
+      <div 
+        className={`sidebar-overlay ${isSidebarOpen ? 'open' : ''}`} 
+        onClick={() => setIsSidebarOpen(false)}
+      ></div>
+
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <ShieldCheck size={28} color="#4f46e5" />
           <span>{t('appTitle')}</span>
@@ -134,28 +142,28 @@ function App() {
         <nav className="sidebar-nav">
           <button 
             className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveView('dashboard')}
+            onClick={() => { setActiveView('dashboard'); setIsSidebarOpen(false); }}
           >
             <LayoutDashboard size={20} />
             <span>{t('dashboard')}</span>
           </button>
           <button 
             className={`nav-item ${activeView === 'members' ? 'active' : ''}`}
-            onClick={() => setActiveView('members')}
+            onClick={() => { setActiveView('members'); setIsSidebarOpen(false); }}
           >
             <Users size={20} />
             <span>{t('members')}</span>
           </button>
           <button 
             className={`nav-item ${activeView === 'transactions' ? 'active' : ''}`}
-            onClick={() => setActiveView('transactions')}
+            onClick={() => { setActiveView('transactions'); setIsSidebarOpen(false); }}
           >
             <History size={20} />
             <span>{t('transactions')}</span>
           </button>
           <button 
             className={`nav-item ${activeView === 'settings' ? 'active' : ''}`}
-            onClick={() => setActiveView('settings')}
+            onClick={() => { setActiveView('settings'); setIsSidebarOpen(false); }}
           >
             <Settings size={20} />
             <span>{t('settings')}</span>
@@ -187,8 +195,15 @@ function App() {
 
       {/* Main Content Area */}
       <main className="main-content">
-        <header className="topbar" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ fontWeight: 600, fontSize: '18px', color: '#111827' }}>
+        <header className="topbar" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            className="mobile-menu-btn" 
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Menu size={24} color="#111827" />
+          </button>
+          
+          <div style={{ fontWeight: 600, fontSize: '18px', color: '#111827', flex: 1 }}>
             {activeView === 'dashboard' && t('overview')}
             {activeView === 'members' && t('membersDir')}
             {activeView === 'transactions' && t('transactions')}
