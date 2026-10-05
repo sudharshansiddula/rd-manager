@@ -35,7 +35,9 @@ function App() {
       setUser(currentUser);
       setAuthLoading(false);
       if (currentUser) {
-        StorageService.initSync();
+        StorageService.initSync(currentUser.uid);
+      } else {
+        StorageService.clearSync();
       }
     });
 
@@ -53,6 +55,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
+      StorageService.clearSync();
       await signOut(auth);
     } catch (error) {
       console.error('Logout failed', error);

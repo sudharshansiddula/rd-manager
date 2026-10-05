@@ -31,20 +31,33 @@ let isInitialized = false;
 let isLoadedFromServer = false;
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
+let currentUserId: string | null = null;
+let unsubscribeSnapshot: (() => void) | null = null;
+
 // Simple event target to notify the app when storage changes
 export const storageEvents = new EventTarget();
 
 export const StorageService = {
   // Initialize and subscribe to Firestore updates (replaces localStorage entirely)
-  initSync() {
-    if (isInitialized) return;
+  initSync(userId: string) {
+    if (isInitialized && currentUserId === userId) return;
+    
+    // Clear previous sync if switching users
+    if (unsubscribeSnapshot) {
+      unsubscribeSnapshot();
+    }
+    
+    currentUserId = userId;
     isInitialized = true;
-    console.log('Initializing Firestore sync (localStorage removed)...');
+    isLoadedFromServer = false;
+    memoryDb = { ...defaultDb };
+    console.log(`Initializing Firestore sync for user ${userId}...`);
+    
     try {
-      const docRef = doc(firestoreDb, 'rd_manager', 'main_db');
+      const docRef = doc(firestoreDb, 'rd_manager_users', userId);
       
       // onSnapshot automatically uses offline persistence cache and keeps UI perfectly synced
-      onSnapshot(docRef, (docSnap: any) => {
+      unsubscribeSnapshot = onSnapshot(docRef, (docSnap: any) => {
         console.log("SNAPSHOT FIRED:", { exists: docSnap.exists(), fromCache: docSnap.metadata.fromCache });
         
         if (docSnap.exists()) {
@@ -53,8 +66,6 @@ export const StorageService = {
           isLoadedFromServer = true;
           storageEvents.dispatchEvent(new Event('db_updated'));
         } else {
-          // If the cache is empty, Firestore might initially return a non-existent snapshot from cache
-          // before hitting the server. We must wait for the server fetch!
           if (docSnap.metadata.fromCache) {
             console.log('Cache is empty. Waiting for server fetch...');
             return;
@@ -62,8 +73,6 @@ export const StorageService = {
           
           console.log('No data found on server. Initializing with default data...');
           isLoadedFromServer = true;
-          // IMPORTANT: Only write defaults if we are absolutely sure the server has no data
-          // and we are NOT in a corrupted cache state.
           if (!docSnap.metadata.fromCache) {
              setDoc(docRef, defaultDb).catch(err => console.error("Initial Firestore save error:", err));
           }
@@ -77,6 +86,14 @@ export const StorageService = {
     }
   },
 
+  clearSync() {
+    if (unsubscribeSnapshot) unsubscribeSnapshot();
+    currentUserId = null;
+    isInitialized = false;
+    isLoadedFromServer = false;
+    memoryDb = { ...defaultDb };
+  },
+
   getDb(): DatabaseSchema {
     return memoryDb;
   },
@@ -88,20 +105,18 @@ export const StorageService = {
     storageEvents.dispatchEvent(new Event('db_updated'));
 
     // Prevent overwriting the database before we have fetched it!
-    if (!isLoadedFromServer) {
-      console.warn("Attempted to save DB before initial load from Firestore. Skipping to prevent data loss.");
+    if (!isLoadedFromServer || !currentUserId) {
+      console.warn("Attempted to save DB before initial load from Firestore or missing user. Skipping to prevent data loss.");
       return;
     }
 
-    // Advanced Professional Optimization: Debounce Firestore writes
-    // Groups rapid updates together to reduce network spam and quota usage.
     if (saveTimeout) {
       clearTimeout(saveTimeout);
     }
     
     saveTimeout = setTimeout(() => {
       try {
-        const docRef = doc(firestoreDb, 'rd_manager', 'main_db');
+        const docRef = doc(firestoreDb, 'rd_manager_users', currentUserId!);
         setDoc(docRef, memoryDb).catch(err => console.error("Firestore save error:", err));
       } catch (err) {
         console.error("Firestore save error:", err);
