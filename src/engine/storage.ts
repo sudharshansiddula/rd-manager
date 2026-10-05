@@ -41,25 +41,25 @@ export const StorageService = {
   // Initialize and subscribe to Firestore updates (replaces localStorage entirely)
   initSync(userId: string) {
     if (isInitialized && currentUserId === userId) return;
-    
+
     // Clear previous sync if switching users
     if (unsubscribeSnapshot) {
       unsubscribeSnapshot();
     }
-    
+
     currentUserId = userId;
     isInitialized = true;
     isLoadedFromServer = false;
     memoryDb = { ...defaultDb };
     console.log(`Initializing Firestore sync for user ${userId}...`);
-    
+
     try {
       const docRef = doc(firestoreDb, 'rd_manager_users', userId);
-      
+
       // onSnapshot automatically uses offline persistence cache and keeps UI perfectly synced
       unsubscribeSnapshot = onSnapshot(docRef, (docSnap: any) => {
         console.log("SNAPSHOT FIRED:", { exists: docSnap.exists(), fromCache: docSnap.metadata.fromCache });
-        
+
         if (docSnap.exists()) {
           const remoteDb = docSnap.data() as DatabaseSchema;
           memoryDb = { ...defaultDb, ...remoteDb };
@@ -70,11 +70,11 @@ export const StorageService = {
             console.log('Cache is empty. Waiting for server fetch...');
             return;
           }
-          
+
           console.log('No data found on server. Initializing with default data...');
           isLoadedFromServer = true;
           if (!docSnap.metadata.fromCache) {
-             setDoc(docRef, defaultDb).catch(err => console.error("Initial Firestore save error:", err));
+            setDoc(docRef, defaultDb).catch(err => console.error("Initial Firestore save error:", err));
           }
           storageEvents.dispatchEvent(new Event('db_updated'));
         }
@@ -100,7 +100,7 @@ export const StorageService = {
 
   saveDb(db: DatabaseSchema) {
     memoryDb = db; // Optimistic update
-    
+
     // Fire event for UI update
     storageEvents.dispatchEvent(new Event('db_updated'));
 
@@ -113,7 +113,7 @@ export const StorageService = {
     if (saveTimeout) {
       clearTimeout(saveTimeout);
     }
-    
+
     saveTimeout = setTimeout(() => {
       try {
         const docRef = doc(firestoreDb, 'rd_manager_users', currentUserId!);
@@ -126,7 +126,7 @@ export const StorageService = {
 
   getSettings(): AppSettings {
     const db = this.getDb();
-    
+
     const mergedSettings: AppSettings = {
       ...defaultDb.settings,
       ...db.settings,
@@ -144,7 +144,7 @@ export const StorageService = {
       db.settings = mergedSettings;
       this.saveDb(db);
     }
-    
+
     return db.settings;
   },
 
@@ -158,10 +158,10 @@ export const StorageService = {
   getMembers(): Member[] {
     return [...(this.getDb().members || [])];
   },
-  
+
   saveMember(member: Member) {
     const db = this.getDb();
-    if(!db.members) db.members = [];
+    if (!db.members) db.members = [];
     const idx = db.members.findIndex(m => m.id === member.id);
     if (idx >= 0) {
       db.members[idx] = member;
@@ -170,14 +170,14 @@ export const StorageService = {
     }
     this.saveDb(db);
   },
-  
+
   deleteMember(memberId: string) {
     const db = this.getDb();
-    if(db.members) db.members = db.members.filter(m => m.id !== memberId);
-    if(db.installments) db.installments = db.installments.filter(i => i.memberId !== memberId);
-    if(db.loans) db.loans = db.loans.filter(l => l.memberId !== memberId);
-    if(db.loanRepayments) db.loanRepayments = db.loanRepayments.filter(lr => lr.memberId !== memberId);
-    if(db.transactions) db.transactions = db.transactions.filter(t => t.memberId !== memberId);
+    if (db.members) db.members = db.members.filter(m => m.id !== memberId);
+    if (db.installments) db.installments = db.installments.filter(i => i.memberId !== memberId);
+    if (db.loans) db.loans = db.loans.filter(l => l.memberId !== memberId);
+    if (db.loanRepayments) db.loanRepayments = db.loanRepayments.filter(lr => lr.memberId !== memberId);
+    if (db.transactions) db.transactions = db.transactions.filter(t => t.memberId !== memberId);
     this.saveDb(db);
   },
 
@@ -191,7 +191,7 @@ export const StorageService = {
 
   saveInstallments(installments: RDInstallment[]) {
     const db = this.getDb();
-    if(!db.installments) db.installments = [];
+    if (!db.installments) db.installments = [];
     installments.forEach(inst => {
       const idx = db.installments.findIndex(i => i.id === inst.id);
       if (idx >= 0) db.installments[idx] = inst;
@@ -210,7 +210,7 @@ export const StorageService = {
 
   saveLoan(loan: Loan) {
     const db = this.getDb();
-    if(!db.loans) db.loans = [];
+    if (!db.loans) db.loans = [];
     const idx = db.loans.findIndex(l => l.id === loan.id);
     if (idx >= 0) db.loans[idx] = loan;
     else db.loans.push(loan);
@@ -227,7 +227,7 @@ export const StorageService = {
 
   saveLoanRepayments(repayments: LoanRepayment[]) {
     const db = this.getDb();
-    if(!db.loanRepayments) db.loanRepayments = [];
+    if (!db.loanRepayments) db.loanRepayments = [];
     repayments.forEach(rep => {
       const idx = db.loanRepayments.findIndex(r => r.id === rep.id);
       if (idx >= 0) db.loanRepayments[idx] = rep;
@@ -240,10 +240,10 @@ export const StorageService = {
   getTransactions(): Transaction[] {
     return [...(this.getDb().transactions || [])];
   },
-  
+
   saveTransaction(txn: Transaction) {
     const db = this.getDb();
-    if(!db.transactions) db.transactions = [];
+    if (!db.transactions) db.transactions = [];
     db.transactions.push(txn);
     this.saveDb(db);
   }

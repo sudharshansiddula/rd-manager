@@ -126,9 +126,23 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
 
   // Compute Dashboard Metrics & Enrich Members
   const enrichedMembers = useMemo(() => {
+    // 1. Build indexes for O(1) lookup to prevent O(N*M) lag
+    const installmentsByMember: Record<string, any[]> = {};
+    const loansByMember: Record<string, any[]> = {};
+    
+    StorageService.getInstallments().forEach(i => {
+      if (!installmentsByMember[i.memberId]) installmentsByMember[i.memberId] = [];
+      installmentsByMember[i.memberId].push(i);
+    });
+    
+    StorageService.getLoans().forEach(l => {
+      if (!loansByMember[l.memberId]) loansByMember[l.memberId] = [];
+      loansByMember[l.memberId].push(l);
+    });
+
     return members.map(member => {
-      const installments = StorageService.getInstallments(member.id);
-      const loans = StorageService.getLoans(member.id).filter(l => l.status === 'ACTIVE');
+      const installments = installmentsByMember[member.id] || [];
+      const loans = (loansByMember[member.id] || []).filter((l: any) => l.status === 'ACTIVE');
       
       const start = new Date(member.startDate);
       const now = new Date();

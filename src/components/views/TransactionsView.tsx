@@ -56,12 +56,30 @@ export const TransactionsView = () => {
     db.members?.forEach(m => memberMap[m.id] = m);
     setMembers(memberMap);
 
-    // 2. Compute member stats
+    // 2. Build indexes for O(1) lookup
+    const instMap: Record<string, RDInstallment[]> = {};
+    const loanMap: Record<string, Loan[]> = {};
+    const repMap: Record<string, LoanRepayment[]> = {};
+
+    db.installments?.forEach(i => {
+      if (!instMap[i.memberId]) instMap[i.memberId] = [];
+      instMap[i.memberId].push(i);
+    });
+    db.loans?.forEach(l => {
+      if (!loanMap[l.memberId]) loanMap[l.memberId] = [];
+      loanMap[l.memberId].push(l);
+    });
+    db.loanRepayments?.forEach(r => {
+      if (!repMap[r.memberId]) repMap[r.memberId] = [];
+      repMap[r.memberId].push(r);
+    });
+
+    // 3. Compute member stats
     const statsMap: Record<string, any> = {};
     db.members?.forEach(member => {
-      const installments = StorageService.getInstallments(member.id);
-      const loans = StorageService.getLoans(member.id);
-      const repayments = StorageService.getLoanRepayments(member.id);
+      const installments = instMap[member.id] || [];
+      const loans = loanMap[member.id] || [];
+      const repayments = repMap[member.id] || [];
       
       const totalSaved = installments.reduce((sum, i) => sum + (i.amountPaid || 0), 0);
       const paidMonthsCount = Math.floor(totalSaved / (member.monthlyContribution || 1));

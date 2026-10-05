@@ -159,6 +159,24 @@ export const DashboardView = () => {
     const loans = db.loans || [];
     const loanRepayments = db.loanRepayments || [];
 
+    // Precompute indexes for O(1) lookups
+    const instMap: Record<string, RDInstallment[]> = {};
+    const loanMap: Record<string, Loan[]> = {};
+    const repMap: Record<string, LoanRepayment[]> = {};
+
+    installments.forEach(i => {
+      if (!instMap[i.memberId]) instMap[i.memberId] = [];
+      instMap[i.memberId].push(i);
+    });
+    loans.forEach(l => {
+      if (!loanMap[l.memberId]) loanMap[l.memberId] = [];
+      loanMap[l.memberId].push(l);
+    });
+    loanRepayments.forEach(r => {
+      if (!repMap[r.memberId]) repMap[r.memberId] = [];
+      repMap[r.memberId].push(r);
+    });
+
     const settings = StorageService.getSettings();
     const loanInterestRate = settings.loanInterestRate ?? 2;
 
@@ -181,9 +199,9 @@ export const DashboardView = () => {
     // Calculate per member
     membersList.forEach(m => {
       totalMembers++;
-      const mInsts = installments.filter(i => i.memberId === m.id);
-      const mLoans = loans.filter(l => l.memberId === m.id);
-      const mReps = loanRepayments.filter(r => r.memberId === m.id);
+      const mInsts = instMap[m.id] || [];
+      const mLoans = loanMap[m.id] || [];
+      const mReps = repMap[m.id] || [];
 
       const start = new Date(m.startDate);
       let monthsElapsed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()) + 1;

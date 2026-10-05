@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useI18n } from '../../locales/i18n';
 import { StorageService } from '../../engine/storage';
 import type { AppSettings } from '../../types';
-import { Save, AlertCircle } from 'lucide-react';
+import { Save, AlertCircle, Shield } from 'lucide-react';
 
 export const SettingsView = () => {
   const { t } = useI18n();
@@ -209,64 +209,55 @@ export const SettingsView = () => {
         </div>
       </div>
 
-      {/* Advanced Data Management */}
-      <div className="card" style={{ padding: '24px' }}>
-        <h3 style={{ margin: '0 0 16px 0', borderBottom: '1px solid var(--border)', paddingBottom: '12px', color: 'var(--danger)' }}>
-          {lang === 'te' ? 'అడ్వాన్స్డ్ డేటా మేనేజ్మెంట్' : 'Advanced Data Management'}
+      {/* Advanced / Data Import Section */}
+      <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', marginTop: '24px', border: '1px solid var(--danger)' }}>
+        <h3 style={{ margin: '0 0 16px 0', color: 'var(--danger)', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          Advanced (Data Import)
         </h3>
-        
-        <div style={{ backgroundColor: '#fff5f5', padding: '16px', borderRadius: '8px', border: '1px solid #ffccc7' }}>
-          <h4 style={{ margin: '0 0 8px 0', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertCircle size={18} />
-            {lang === 'te' ? 'డేటా బేస్ ఇంపోర్ట్ (Firebase Restore)' : 'Import Database JSON (Firebase Restore)'}
-          </h4>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-            {lang === 'te' ? 'మీరు Google Sheets నుండి తయారు చేసిన JSON ఫైల్ ఇక్కడ అప్‌లోడ్ చేసి డేటాబేస్ లో సేవ్ చేయవచ్చు. ఇది పాత డేటా ని పూర్తిగా రీప్లేస్ చేస్తుంది!' : 'Upload the JSON file generated from Google Sheets to overwrite the entire database. This will completely replace existing data!'}
-          </p>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <input 
-              type="file" 
-              accept=".json"
-              id="importJsonFile"
-              style={{ fontSize: '14px', border: '1px solid var(--border)', padding: '6px', borderRadius: '4px', background: '#fff', width: '250px' }}
-            />
-            <button 
-              className="btn btn-primary"
-              style={{ background: 'var(--danger)', border: 'none' }}
-              onClick={() => {
-                const fileInput = document.getElementById('importJsonFile') as HTMLInputElement;
-                if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-                  alert(lang === 'te' ? 'దయచేసి ఫైల్ ఎంచుకోండి.' : 'Please select a file.');
-                  return;
-                }
-                const file = fileInput.files[0];
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  try {
-                    const content = e.target?.result as string;
-                    const parsed = JSON.parse(content);
-                    if (!parsed.members || !parsed.installments || !parsed.loans) {
-                      alert(lang === 'te' ? 'ఇది సరైన RD Manager JSON కాదు!' : 'Invalid RD Manager JSON format!');
-                      return;
-                    }
-                    if (window.confirm(lang === 'te' ? 'మీ పాత డేటా మొత్తం తొలగించబడుతుంది. ఈ ఫైల్ తో రీప్లేస్ చేయమంటారా?' : 'This will overwrite your entire database. Are you sure you want to proceed?')) {
-                      StorageService.saveDb(parsed);
-                      alert(lang === 'te' ? 'డేటాబేస్ విజయవంతంగా ఇంపోర్ట్ అయ్యింది! డాష్‌బోర్డ్‌కి వెళ్లండి.' : 'Database imported successfully!');
-                      fileInput.value = '';
-                    }
-                  } catch (err) {
-                    alert(lang === 'te' ? 'JSON ఫైల్ చదవడంలో లోపం: ' + err : 'Error parsing JSON file: ' + err);
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: '1.5' }}>
+          Upload a <strong>JSON backup file</strong> to replace your entire database. 
+          <br /><strong>WARNING:</strong> This action will overwrite all existing data in Firebase and cannot be undone!
+        </p>
+        <div>
+          <input 
+            type="file" 
+            accept=".json"
+            id="import-json"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                try {
+                  const jsonStr = event.target?.result as string;
+                  const dbData = JSON.parse(jsonStr);
+                  if (window.confirm("WARNING: This will overwrite your existing Firebase database with the data from this file! Are you absolutely sure?")) {
+                    StorageService.saveDb(dbData);
+                    alert("Data successfully imported! The app will now sync with Firebase.");
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 2000);
                   }
-                };
-                reader.readAsText(file);
-              }}
-            >
-              {lang === 'te' ? 'డేటా ఇంపోర్ట్ చేయి' : 'Import Data'}
-            </button>
-          </div>
+                } catch (err) {
+                  alert("Error parsing JSON file. Make sure it's valid.");
+                  console.error(err);
+                }
+              };
+              reader.readAsText(file);
+              // Reset the input
+              e.target.value = '';
+            }}
+          />
+          <button 
+            className="btn btn-primary" 
+            style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }}
+            onClick={() => document.getElementById('import-json')?.click()}
+          >
+            Import JSON Data
+          </button>
         </div>
       </div>
-
     </div>
   );
 };
