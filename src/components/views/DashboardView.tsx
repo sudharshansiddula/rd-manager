@@ -55,6 +55,9 @@ const localT = {
   statusOutstanding: { en: 'Outstanding', te: 'బయట ఉన్నది' },
   statusFuture: { en: 'Future Expected', te: 'భవిష్యత్తులో ఆశించేది' },
   lateFeeCol: { en: 'Late Fine Collected', te: 'వసూలైన లేట్ ఫైన్' },
+  rdPaid: { en: 'RD Paid', te: 'పొదుపు చెల్లింపు' },
+  loanGiven: { en: 'Loan Issued', te: 'రుణం మంజూరు' },
+  loanRepayment: { en: 'Repayment', te: 'అప్పు జమ' },
 
   // Tooltips
   ttTotalMembers: { en: 'Total number of members registered in the system.', te: 'సిస్టంలో నమోదైన మొత్తం సభ్యుల సంఖ్య.' },
