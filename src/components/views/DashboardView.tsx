@@ -12,7 +12,6 @@ import {
 } from 'recharts';
 import type { RDInstallment, Loan, LoanRepayment, Member } from '../../types';
 
-// --- Local Translations ---
 const localT = {
   totalRDBonusPayable: { en: 'Total RD Bonus Payable (Till Today)', te: 'నేటి వరకు ఇవ్వాల్సిన బోనస్' },
   totalLoanGiven: { en: 'Total Loan Amount Given', te: 'ఇచ్చిన మొత్తం అప్పు' },
@@ -55,7 +54,29 @@ const localT = {
   statusPayable: { en: 'Payable', te: 'చెల్లించాల్సింది' },
   statusOutstanding: { en: 'Outstanding', te: 'బయట ఉన్నది' },
   statusFuture: { en: 'Future Expected', te: 'భవిష్యత్తులో ఆశించేది' },
-  lateFeeCol: { en: 'Late Fine Collected', te: 'వసూలైన లేట్ ఫైన్' }
+  lateFeeCol: { en: 'Late Fine Collected', te: 'వసూలైన లేట్ ఫైన్' },
+
+  // Tooltips
+  ttTotalMembers: { en: 'Total number of members registered in the system.', te: 'సిస్టంలో నమోదైన మొత్తం సభ్యుల సంఖ్య.' },
+  ttMoneyCollected: { en: 'Total RD amount actually collected from all members till date.', te: 'ఇప్పటి వరకు సభ్యుల నుండి వసూలైన మొత్తం పొదుపు (RD) డబ్బు.' },
+  ttBonusPayable: { en: 'Total bonus (interest) calculated on the collected RD amount, payable to the members.', te: 'వసూలైన పొదుపుపై సభ్యులకు ఇవ్వాల్సిన మొత్తం బోనస్ (వడ్డీ).' },
+  ttTotalOwed: { en: 'Total amount the firm owes to the members (RD Collected + Bonus Payable).', te: 'సంస్థ సభ్యులకు ఇవ్వాల్సిన మొత్తం డబ్బు (పొదుపు + బోనస్).' },
+  ttLoanGiven: { en: 'Total principal amount given as loans to the members.', te: 'సభ్యులకు అప్పుగా ఇచ్చిన మొత్తం అసలు డబ్బు.' },
+  ttLoanRecovered: { en: 'Total loan principal amount that has been recovered so far.', te: 'ఇప్పటి వరకు వసూలైన మొత్తం అప్పు (అసలు) డబ్బు.' },
+  ttOutstandingLoan: { en: 'Remaining principal amount given as loans that is yet to be recovered.', te: 'ఇంకా వసూలు కావాల్సిన మిగిలిన అప్పు (అసలు) మొత్తం.' },
+  ttIntPending: { en: 'Loan interest that has been earned but not yet collected.', te: 'రుణాలపై సృష్టించబడి, ఇంకా వసూలు కాని బకాయి వడ్డీ.' },
+  ttPendingRD: { en: 'Total RD installments that are overdue and yet to be paid by the members.', te: 'సభ్యులు కట్టాల్సిన, ఇంకా కట్టని పెండింగ్ పొదుపు (RD) వాయిదాలు.' },
+  ttFutureRD: { en: 'RD contributions expected in the future based on the remaining tenure of all members.', te: 'సభ్యుల మిగిలిన గడువు ఆధారంగా భవిష్యత్తులో రాబోయే ఆశించిన పొదుపు.' },
+  ttFutureInt: { en: 'Loan interest expected in the future assuming current outstanding loans remain until the end of the members tenure.', te: 'ప్రస్తుతం ఉన్న అప్పులు సభ్యుల గడువు ముగిసేవరకు ఉంటే భవిష్యత్తులో వచ్చే ఆశించిన వడ్డీ.' },
+  ttTotalExpectedIncome: { en: 'Sum of Future Expected RD and Future Expected Loan Interest.', te: 'భవిష్యత్తులో రాబోయే పొదుపు మరియు భవిష్యత్తులో రాబోయే వడ్డీల మొత్తం.' },
+  ttFutureBonus: { en: 'Additional bonus that will be payable to members at maturity based on their future contributions.', te: 'సభ్యులు భవిష్యత్తులో కట్టే పొదుపుపై గడువు తీరిన తర్వాత వారికి అదనంగా ఇవ్వాల్సిన బోనస్.' },
+  ttTotalIntCol: { en: 'Total loan interest actually collected from the members till date.', te: 'సభ్యుల నుండి ఇప్పటి వరకు నిజంగా వసూలైన మొత్తం లోన్ వడ్డీ.' },
+  ttLateFeeCol: { en: 'Total late fines collected from the members for delayed payments.', te: 'ఆలస్యంగా చెల్లించినందుకు సభ్యుల నుండి వసూలైన మొత్తం లేట్ ఫైన్.' },
+  ttActualIncome: { en: 'Total Actual Income generated (Interest Collected + Late Fine Collected).', te: 'సంస్థకు వచ్చిన వాస్తవ ఆదాయం (వసూలైన వడ్డీ + లేట్ ఫైన్).' },
+  ttActualOutflow: { en: 'Total bonus earned by the members so far, which is an expense/outflow for the firm.', te: 'సభ్యులకు ఇవ్వాల్సిన బోనస్, ఇది సంస్థకు అయ్యే వాస్తవ ఖర్చు.' },
+  ttNetPosition: { en: 'Net Position = Actual Income - Actual Outflow. Shows if the firm is currently in Profit or Loss.', te: 'నికర స్థితి = వాస్తవ ఆదాయం - వాస్తవ ఖర్చు. సంస్థ ప్రస్తుతం లాభంలో ఉందా లేదా నష్టంలో ఉందా అని తెలుపుతుంది.' },
+  ttTotalCashCol: { en: 'Sum of all money received: RD + Loan Principal Recovered + Loan Interest Collected + Late Fine Collected.', te: 'వచ్చిన మొత్తం డబ్బు: పొదుపు + వసూలైన అప్పు అసలు + వసూలైన వడ్డీ + లేట్ ఫైన్.' },
+  ttCashInHand: { en: 'Total Money Collected - Total Loans Given. Shows the actual physical cash available.', te: 'మొత్తం వసూలైన డబ్బు - ఇచ్చిన మొత్తం అప్పు. ప్రస్తుతం చేతిలో ఉన్న నగదు (Cash) ని తెలుపుతుంది.' }
 };
 
 const getT = (lang: 'en' | 'te', key: keyof typeof localT) => localT[key]?.[lang] || localT[key]?.en || key;
@@ -339,6 +360,7 @@ export const DashboardView = () => {
         <div className="card" style={{ padding: '16px', borderLeft: '4px solid #3b82f6' }}>
           <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
             <Users size={14} style={{ marginRight: '6px' }} /> {t('totalMembersCount')}
+            <InfoIcon tooltip={getT(lang, 'ttTotalMembers')} />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '8px' }}>{stats.totalMembers}</div>
         </div>
@@ -346,7 +368,7 @@ export const DashboardView = () => {
         <div className="card" style={{ padding: '16px', borderLeft: '4px solid #10b981' }}>
           <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
             <PiggyBank size={14} style={{ marginRight: '6px' }} /> {getT(lang, 'moneyCollected')}
-            <InfoIcon tooltip="Total RD amount collected from all members till today." />
+            <InfoIcon tooltip={getT(lang, 'ttMoneyCollected')} />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '8px', color: '#10b981' }}>₹{formatCurrency(stats.totalRDCollected)}</div>
           <Badge text={getT(lang, 'statusCollected')} type="success" />
@@ -355,7 +377,7 @@ export const DashboardView = () => {
         <div className="card" style={{ padding: '16px', borderLeft: '4px solid #8b5cf6' }}>
           <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
             <Landmark size={14} style={{ marginRight: '6px' }} /> {getT(lang, 'totalOwedToMembers')}
-            <InfoIcon tooltip="RD Collected + Bonus Payable. Total amount the firm owes to the members currently." />
+            <InfoIcon tooltip={getT(lang, 'ttTotalOwed')} />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '8px', color: '#8b5cf6' }}>₹{formatCurrency(stats.totalOwedToMembers)}</div>
           <Badge text={getT(lang, 'statusPayable')} type="danger" />
@@ -364,7 +386,7 @@ export const DashboardView = () => {
         <div className="card" style={{ padding: '16px', borderLeft: '4px solid #ef4444' }}>
           <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
             <Wallet size={14} style={{ marginRight: '6px' }} /> {getT(lang, 'totalOutstandingLoan')}
-            <InfoIcon tooltip="Principal amount given as loans that is yet to be recovered." />
+            <InfoIcon tooltip={getT(lang, 'ttOutstandingLoan')} />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '8px', color: '#ef4444' }}>₹{formatCurrency(stats.totalOutstandingLoan)}</div>
           <Badge text={getT(lang, 'statusOutstanding')} type="warning" />
@@ -383,30 +405,30 @@ export const DashboardView = () => {
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#4b5563' }}>{getT(lang, 'moneyCollected')}</span>
+                <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'moneyCollected')} <InfoIcon tooltip={getT(lang, 'ttMoneyCollected')} /></span>
                 <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{formatCurrency(stats.totalRDCollected)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#4b5563' }}>{getT(lang, 'bonusPayable')}</span>
+                <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'bonusPayable')} <InfoIcon tooltip={getT(lang, 'ttBonusPayable')} /></span>
                 <span style={{ fontWeight: 600, color: '#ef4444' }}>- ₹{formatCurrency(stats.totalBonusPayable)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', borderTop: '1px dashed #e5e7eb', paddingTop: '8px' }}>
-                <span style={{ color: '#111827', fontWeight: 600 }}>{getT(lang, 'totalOwedToMembers')}</span>
+                <span style={{ color: '#111827', fontWeight: 600, display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalOwedToMembers')} <InfoIcon tooltip={getT(lang, 'ttTotalOwed')} /></span>
                 <span style={{ fontWeight: 700, color: '#8b5cf6' }}>₹{formatCurrency(stats.totalOwedToMembers)}</span>
               </div>
               
               <div style={{ height: '16px' }}></div>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#4b5563' }}>{getT(lang, 'loanPrinRecovered')}</span>
+                <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'loanPrinRecovered')} <InfoIcon tooltip={getT(lang, 'ttOutstandingLoan')} /></span>
                 <span style={{ fontWeight: 600, color: '#f59e0b' }}>₹{formatCurrency(stats.totalOutstandingLoan)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#4b5563' }}>{getT(lang, 'loanIntPending')}</span>
+                <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'loanIntPending')} <InfoIcon tooltip={getT(lang, 'ttIntPending')} /></span>
                 <span style={{ fontWeight: 600, color: '#f59e0b' }}>₹{formatCurrency(stats.totalLoanInterestPending)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', borderTop: '1px dashed #e5e7eb', paddingTop: '8px' }}>
-                <span style={{ color: '#111827', fontWeight: 600 }}>{getT(lang, 'totalPendingRD')}</span>
+                <span style={{ color: '#111827', fontWeight: 600, display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalPendingRD')} <InfoIcon tooltip={getT(lang, 'ttPendingRD')} /></span>
                 <span style={{ fontWeight: 700, color: '#ef4444' }}>₹{formatCurrency(stats.totalPendingRDAmount)}</span>
               </div>
             </div>
@@ -419,22 +441,22 @@ export const DashboardView = () => {
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#854d0e' }}>{getT(lang, 'futureRDExpected')}</span>
+                <span style={{ color: '#854d0e', display: 'flex', alignItems: 'center' }}>{getT(lang, 'futureRDExpected')} <InfoIcon tooltip={getT(lang, 'ttFutureRD')} /></span>
                 <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{formatCurrency(stats.futureRDExpected)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#854d0e' }}>{getT(lang, 'futureIntExpected')}</span>
+                <span style={{ color: '#854d0e', display: 'flex', alignItems: 'center' }}>{getT(lang, 'futureIntExpected')} <InfoIcon tooltip={getT(lang, 'ttFutureInt')} /></span>
                 <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{formatCurrency(Math.round(stats.futureInterestExpected))}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', borderTop: '1px dashed #fde047', paddingTop: '8px' }}>
-                <span style={{ color: '#713f12', fontWeight: 600 }}>{getT(lang, 'totalExpectedIncome')}</span>
+                <span style={{ color: '#713f12', fontWeight: 600, display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalExpectedIncome')} <InfoIcon tooltip={getT(lang, 'ttTotalExpectedIncome')} /></span>
                 <span style={{ fontWeight: 700, color: '#10b981' }}>₹{formatCurrency(Math.round(stats.futureRDExpected + stats.futureInterestExpected))}</span>
               </div>
 
               <div style={{ height: '8px' }}></div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#854d0e' }}>{getT(lang, 'futureBonusExpected')}</span>
+                <span style={{ color: '#854d0e', display: 'flex', alignItems: 'center' }}>{getT(lang, 'futureBonusExpected')} <InfoIcon tooltip={getT(lang, 'ttFutureBonus')} /></span>
                 <span style={{ fontWeight: 600, color: '#ef4444' }}>- ₹{formatCurrency(stats.futureBonusExpected)}</span>
               </div>
             </div>
@@ -451,26 +473,26 @@ export const DashboardView = () => {
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#4b5563' }}>{getT(lang, 'totalLoanInterestCollected')}</span>
+                <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalLoanInterestCollected')} <InfoIcon tooltip={getT(lang, 'ttTotalIntCol')} /></span>
                 <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{formatCurrency(stats.totalLoanInterestCollected)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#4b5563' }}>{getT(lang, 'lateFeeCol')}</span>
+                <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'lateFeeCol')} <InfoIcon tooltip={getT(lang, 'ttLateFeeCol')} /></span>
                 <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{formatCurrency(stats.totalLateFineCollected)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', borderTop: '1px dashed #e5e7eb', paddingTop: '8px' }}>
-                <span style={{ color: '#111827', fontWeight: 600 }}>{getT(lang, 'actualIncome')}</span>
+                <span style={{ color: '#111827', fontWeight: 600, display: 'flex', alignItems: 'center' }}>{getT(lang, 'actualIncome')} <InfoIcon tooltip={getT(lang, 'ttActualIncome')} /></span>
                 <span style={{ fontWeight: 700, color: '#10b981' }}>₹{formatCurrency(stats.actualIncome)}</span>
               </div>
 
               <div style={{ height: '8px' }}></div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#4b5563' }}>{getT(lang, 'actualOutflow')}</span>
+                <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'actualOutflow')} <InfoIcon tooltip={getT(lang, 'ttActualOutflow')} /></span>
                 <span style={{ fontWeight: 600, color: '#ef4444' }}>- ₹{formatCurrency(stats.actualOutflow)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', borderTop: '1px dashed #e5e7eb', paddingTop: '8px', marginTop: '4px' }}>
-                <span style={{ color: '#111827', fontWeight: 700 }}>{getT(lang, 'netPosition')}</span>
+                <span style={{ color: '#111827', fontWeight: 700, display: 'flex', alignItems: 'center' }}>{getT(lang, 'netPosition')} <InfoIcon tooltip={getT(lang, 'ttNetPosition')} /></span>
                 <span style={{ fontWeight: 700, color: stats.currentProfit >= 0 ? '#10b981' : '#ef4444', fontSize: '18px' }}>
                   {stats.currentProfit >= 0 ? getT(lang, 'currentProfit') : getT(lang, 'currentLoss')}: ₹{formatCurrency(Math.abs(stats.currentProfit))}
                 </span>
@@ -485,15 +507,15 @@ export const DashboardView = () => {
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#15803d' }}>{getT(lang, 'totalMoneyCollected')}</span>
+                <span style={{ color: '#15803d', display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalMoneyCollected')} <InfoIcon tooltip={getT(lang, 'ttTotalCashCol')} /></span>
                 <span style={{ fontWeight: 600, color: '#15803d' }}>+ ₹{formatCurrency(stats.totalCashCollected)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#15803d' }}>{getT(lang, 'totalLoansGivenCash')}</span>
+                <span style={{ color: '#15803d', display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalLoansGivenCash')} <InfoIcon tooltip={getT(lang, 'ttLoanGiven')} /></span>
                 <span style={{ fontWeight: 600, color: '#dc2626' }}>- ₹{formatCurrency(stats.totalLoanGiven)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', borderTop: '1px dashed #86efac', paddingTop: '8px', marginTop: '4px' }}>
-                <span style={{ color: '#14532d', fontWeight: 700 }}>{getT(lang, 'cashInHand')}</span>
+                <span style={{ color: '#14532d', fontWeight: 700, display: 'flex', alignItems: 'center' }}>{getT(lang, 'cashInHand')} <InfoIcon tooltip={getT(lang, 'ttCashInHand')} /></span>
                 <span style={{ fontWeight: 800, color: '#16a34a', fontSize: '22px' }}>
                   ₹{formatCurrency(stats.cashInHand)}
                 </span>
