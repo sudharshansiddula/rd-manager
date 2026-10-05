@@ -324,6 +324,23 @@ input, select {
   display: none;
 }
 
+/* Profile View Layout */
+.profile-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--bg-app);
+}
+.profile-header-section {
+  padding: 24px 24px 0 24px;
+  flex-shrink: 0;
+}
+.profile-table-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 24px 24px 24px;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
@@ -368,5 +385,16 @@ input, select {
   }
   .modal-content {
     width: 95%;
+  }
+  .profile-container {
+    height: auto;
+    display: block;
+  }
+  .profile-header-section {
+    padding: 0 0 16px 0;
+  }
+  .profile-table-container {
+    overflow-y: visible;
+    padding: 0;
   }
 }

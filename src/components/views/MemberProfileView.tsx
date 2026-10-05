@@ -554,9 +554,9 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--bg-app)' }}>
+    <div className="profile-container">
       {/* Sticky Header & Dashboards Section */}
-      <div style={{ padding: '24px 24px 0 24px', flexShrink: 0 }}>
+      <div className="profile-header-section">
         {/* Header Section */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
@@ -775,7 +775,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
         const sumTotalPaid = rows.reduce((sum, r) => sum + (r.totalPaid || 0), 0);
 
         return (
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px 24px' }}>
+          <div className="profile-table-container">
             <div className="table-wrapper">
               <table className="table" style={{ fontSize: '13px' }}>
                 <thead>
