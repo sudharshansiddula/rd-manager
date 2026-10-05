@@ -775,8 +775,8 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
         const sumTotalPaid = rows.reduce((sum, r) => sum + (r.totalPaid || 0), 0);
 
         return (
-          <div className="profile-table-container">
-            <div className="table-wrapper">
+          <div className="profile-table-container" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="table-wrapper" style={{ flex: 1, maxHeight: 'none' }}>
               <table className="table" style={{ fontSize: '13px' }}>
                 <thead>
                   <tr>
