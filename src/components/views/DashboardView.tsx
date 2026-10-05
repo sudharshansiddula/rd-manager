@@ -377,7 +377,7 @@ export const DashboardView = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <RechartsTooltip formatter={(value: any, name: string) => [`${value} Members`, name]} />
+                <RechartsTooltip formatter={(value: any, name: any) => [`${value} Members`, name as string]} />
               </PieChart>
             </ResponsiveContainer>
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
