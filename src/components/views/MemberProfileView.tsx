@@ -270,6 +270,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
       let inst = installments.find(x => x.monthIndex === monthIndex);
       if (inst) {
         inst.amountPaid = 0;
+        inst.depositorDetails = '';
         inst.lateFeePaid = 0;
         inst.status = 'PENDING';
         StorageService.saveInstallments([inst]);
