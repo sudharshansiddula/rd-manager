@@ -614,9 +614,9 @@ export const DashboardView = () => {
             {getT(lang, 'viewAll')} &rarr;
           </button>
         </div>
-        <div className="table-wrapper">
+        <div className="table-wrapper" style={{ maxHeight: '350px', overflowY: 'auto' }}>
           <table className="table" style={{ fontSize: '13px', width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
+            <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f9fafb' }}>
               <tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left', color: '#6b7280' }}>
                 <th style={{ padding: '8px 0' }}>{getT(lang, 'date')}</th>
                 <th>{getT(lang, 'member')}</th>

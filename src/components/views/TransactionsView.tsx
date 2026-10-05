@@ -464,11 +464,10 @@ export const TransactionsView = () => {
       </div>
 
       {/* Comprehensive History List */}
-      <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px' }}>
-            <thead style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-              <tr>
+      <div className="table-wrapper" style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+        <table className="table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px' }}>
+          <thead style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+            <tr>
                 <th onClick={() => requestSort('timestamp')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', userSelect: 'none' }}>{t('entryDate')}{getSortIcon('timestamp')}</th>
                 <th onClick={() => requestSort('memberName')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', userSelect: 'none' }}>{t('memberDetails')}{getSortIcon('memberName')}</th>
                 <th onClick={() => requestSort('memberStatus')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', userSelect: 'none' }}>{t('memberStatus')}{getSortIcon('memberStatus')}</th>
@@ -608,7 +607,6 @@ export const TransactionsView = () => {
               )}
             </tbody>
           </table>
-        </div>
       </div>
     </div>
   );

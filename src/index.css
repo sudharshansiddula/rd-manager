@@ -163,6 +163,8 @@ input, select {
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 10px;
+  overflow: auto;
+  max-height: calc(100vh - 250px);
 }
 
 .table {
@@ -396,5 +398,9 @@ input, select {
   .profile-table-container {
     overflow-y: visible;
     padding: 0;
+  }
+  .table-wrapper {
+    max-height: none;
+    overflow-y: visible;
   }
 }
