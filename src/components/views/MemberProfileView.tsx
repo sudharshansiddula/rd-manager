@@ -846,7 +846,14 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                             <td style={{ textAlign: 'right' }}>
                               <input id={`rdAmount-${r.monthIndex}`} type="number" className="input-compact" value={rowEdits.rdAmount === 0 ? '' : rowEdits.rdAmount} onChange={e => setRowEdits({ ...rowEdits, rdAmount: Number(e.target.value) })} onKeyDown={e => handleKeyDown(e, 'rdAmount', r.monthIndex)} style={{ width: '80px', textAlign: 'right' }} />
                               {getPendingRDAmtForMonth(r.monthIndex, isEditing, rowEdits.rdAmount) > 0 && (
-                                <div style={{ fontSize: '10px', color: 'var(--warning)', marginTop: '4px', whiteSpace: 'nowrap' }}>
+                                <div 
+                                  onClick={() => {
+                                    const due = getPendingRDAmtForMonth(r.monthIndex, isEditing, rowEdits.rdAmount);
+                                    if (due > 0) setRowEdits({ ...rowEdits, rdAmount: rowEdits.rdAmount + due });
+                                  }}
+                                  style={{ fontSize: '10px', color: 'var(--warning)', marginTop: '4px', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                                  title="Click to autofill"
+                                >
                                   Due: ₹{getPendingRDAmtForMonth(r.monthIndex, isEditing, rowEdits.rdAmount)}
                                 </div>
                               )}
@@ -855,13 +862,33 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                             <td style={{ textAlign: 'right' }}><input id={`principalPaid-${r.monthIndex}`} type="number" className="input-compact" value={rowEdits.principalPaid === 0 ? '' : rowEdits.principalPaid} onChange={e => setRowEdits({ ...rowEdits, principalPaid: Number(e.target.value) })} onKeyDown={e => handleKeyDown(e, 'principalPaid', r.monthIndex)} style={{ width: '80px', textAlign: 'right' }} /></td>
                             <td style={{ textAlign: 'right' }}>
                               <input id={`interestPaid-${r.monthIndex}`} type="number" className="input-compact" value={rowEdits.interestPaid === 0 ? '' : rowEdits.interestPaid} onChange={e => setRowEdits({ ...rowEdits, interestPaid: Number(e.target.value) })} onKeyDown={e => handleKeyDown(e, 'interestPaid', r.monthIndex)} style={{ width: '80px', textAlign: 'right' }} />
-                              {r.expectedInterest > 0 && rowEdits.interestPaid < r.expectedInterest && <div style={{ fontSize: '11px', color: 'var(--warning)', marginTop: '2px' }}>Due: ₹{formatCurrency(r.expectedInterest - rowEdits.interestPaid)}</div>}
+                              {r.expectedInterest > 0 && rowEdits.interestPaid < r.expectedInterest && (
+                                <div 
+                                  onClick={() => {
+                                    const due = r.expectedInterest - rowEdits.interestPaid;
+                                    if (due > 0) setRowEdits({ ...rowEdits, interestPaid: rowEdits.interestPaid + due });
+                                  }}
+                                  style={{ fontSize: '11px', color: 'var(--warning)', marginTop: '2px', cursor: 'pointer' }}
+                                  title="Click to autofill"
+                                >
+                                  Due: ₹{formatCurrency(r.expectedInterest - rowEdits.interestPaid)}
+                                </div>
+                              )}
                             </td>
                             <td style={{ textAlign: 'right' }}>
                               <input id={`lateFee-${r.monthIndex}`} type="number" className="input-compact" value={rowEdits.lateFee === 0 ? '' : rowEdits.lateFee} onChange={e => setRowEdits({ ...rowEdits, lateFee: Number(e.target.value) })} onKeyDown={e => handleKeyDown(e, 'lateFee', r.monthIndex)} style={{ width: '60px', textAlign: 'right' }} />
-                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', whiteSpace: 'nowrap' }}>
-                                Due: ₹{getLateFeeHintForMonth(r.monthIndex)}
-                              </div>
+                              {getLateFeeHintForMonth(r.monthIndex) > 0 && (
+                                <div 
+                                  onClick={() => {
+                                    const due = getLateFeeHintForMonth(r.monthIndex);
+                                    if (due > 0) setRowEdits({ ...rowEdits, lateFee: due });
+                                  }}
+                                  style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                                  title="Click to autofill"
+                                >
+                                  Due: ₹{getLateFeeHintForMonth(r.monthIndex)}
+                                </div>
+                              )}
                             </td>
                             <td style={{ fontWeight: 600, textAlign: 'right' }}>₹{formatCurrency(rowEdits.rdAmount + rowEdits.principalPaid + rowEdits.interestPaid + rowEdits.lateFee)}</td>
                             <td style={{ fontWeight: 600, textAlign: 'right', color: r.loanBalAfter > 0 ? 'inherit' : 'var(--text-muted)' }}>{r.loanBalAfter > 0 ? `₹${formatCurrency(r.loanBalAfter)}` : '-'}</td>
