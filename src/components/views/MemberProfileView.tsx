@@ -799,7 +799,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                       {t('depositorDetails')}
                     </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>
-                      Loan Out. (₹)
+                      {t('loanOut')} (₹)
                       <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>{sumLoanDisbursed > 0 ? `(₹${formatCurrency(sumLoanDisbursed)})` : '-'}</div>
                     </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>

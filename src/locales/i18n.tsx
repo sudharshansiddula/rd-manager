@@ -98,6 +98,7 @@ export const translations: Translations = {
   month: { en: 'Month', te: 'నెల' },
   principalRepayment: { en: 'Principal Repaid', te: 'అసలు జమ' },
   interestOnLoan: { en: 'Interest', te: 'అప్పుపై వడ్డీ' },
+  loanOut: { en: 'Loan Out.', te: 'అప్పు ఇచ్చినది' },
   depositorDetails: { en: 'Depositor / Guarantor Details', te: 'జమానతు పేరు, వివరాలు' },
   lateFee: { en: 'Late Fee', te: 'ఆలస్య రుసుము' },
   totalPaid: { en: 'Total Paid', te: 'చెల్లించిన మొత్తం' },
