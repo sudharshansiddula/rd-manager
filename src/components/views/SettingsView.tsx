@@ -209,6 +209,63 @@ export const SettingsView = () => {
         </div>
       </div>
 
+      {/* Advanced Data Management */}
+      <div className="card" style={{ padding: '24px' }}>
+        <h3 style={{ margin: '0 0 16px 0', borderBottom: '1px solid var(--border)', paddingBottom: '12px', color: 'var(--danger)' }}>
+          {lang === 'te' ? 'అడ్వాన్స్డ్ డేటా మేనేజ్మెంట్' : 'Advanced Data Management'}
+        </h3>
+        
+        <div style={{ backgroundColor: '#fff5f5', padding: '16px', borderRadius: '8px', border: '1px solid #ffccc7' }}>
+          <h4 style={{ margin: '0 0 8px 0', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={18} />
+            {lang === 'te' ? 'డేటా బేస్ ఇంపోర్ట్ (Firebase Restore)' : 'Import Database JSON (Firebase Restore)'}
+          </h4>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+            {lang === 'te' ? 'మీరు Google Sheets నుండి తయారు చేసిన JSON ఫైల్ ఇక్కడ అప్‌లోడ్ చేసి డేటాబేస్ లో సేవ్ చేయవచ్చు. ఇది పాత డేటా ని పూర్తిగా రీప్లేస్ చేస్తుంది!' : 'Upload the JSON file generated from Google Sheets to overwrite the entire database. This will completely replace existing data!'}
+          </p>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <input 
+              type="file" 
+              accept=".json"
+              id="importJsonFile"
+              style={{ fontSize: '14px', border: '1px solid var(--border)', padding: '6px', borderRadius: '4px', background: '#fff', width: '250px' }}
+            />
+            <button 
+              className="btn btn-primary"
+              style={{ background: 'var(--danger)', border: 'none' }}
+              onClick={() => {
+                const fileInput = document.getElementById('importJsonFile') as HTMLInputElement;
+                if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                  alert(lang === 'te' ? 'దయచేసి ఫైల్ ఎంచుకోండి.' : 'Please select a file.');
+                  return;
+                }
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  try {
+                    const content = e.target?.result as string;
+                    const parsed = JSON.parse(content);
+                    if (!parsed.members || !parsed.installments || !parsed.loans) {
+                      alert(lang === 'te' ? 'ఇది సరైన RD Manager JSON కాదు!' : 'Invalid RD Manager JSON format!');
+                      return;
+                    }
+                    if (window.confirm(lang === 'te' ? 'మీ పాత డేటా మొత్తం తొలగించబడుతుంది. ఈ ఫైల్ తో రీప్లేస్ చేయమంటారా?' : 'This will overwrite your entire database. Are you sure you want to proceed?')) {
+                      StorageService.saveDb(parsed);
+                      alert(lang === 'te' ? 'డేటాబేస్ విజయవంతంగా ఇంపోర్ట్ అయ్యింది! డాష్‌బోర్డ్‌కి వెళ్లండి.' : 'Database imported successfully!');
+                      fileInput.value = '';
+                    }
+                  } catch (err) {
+                    alert(lang === 'te' ? 'JSON ఫైల్ చదవడంలో లోపం: ' + err : 'Error parsing JSON file: ' + err);
+                  }
+                };
+                reader.readAsText(file);
+              }}
+            >
+              {lang === 'te' ? 'డేటా ఇంపోర్ట్ చేయి' : 'Import Data'}
+            </button>
+          </div>
+        </div>
+      </div>
 
     </div>
   );
