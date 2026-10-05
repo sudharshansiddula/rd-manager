@@ -27,6 +27,7 @@ export interface RDInstallment {
   paidDate?: string;
   amountPaid: number;
   lateFeePaid: number;
+  depositorDetails?: string;
   receiptNo?: string;
   
   updatedAt: number;

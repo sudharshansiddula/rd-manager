@@ -135,6 +135,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
   // Row edits state
   const [rowEdits, setRowEdits] = useState({
     rdAmount: 0,
+    depositorDetails: '',
     loanDisbursed: 0,
     principalPaid: 0,
     interestPaid: 0,
@@ -205,6 +206,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
         monthIndex: i,
         monthStr,
         rdAmount,
+        depositorDetails: inst?.depositorDetails || '',
         loanDisbursed: loanDisbursedThisMonth,
         lateFee,
         principalPaid,
@@ -227,6 +229,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
     setEditRowIdx(idx);
     setRowEdits({
       rdAmount: row.rdAmount || 0,
+      depositorDetails: row.depositorDetails || '',
       loanDisbursed: row.loanDisbursed || 0,
       principalPaid: row.principalPaid || 0,
       interestPaid: row.interestPaid || 0,
@@ -241,6 +244,8 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
     if (e.key === 'Enter') {
       e.preventDefault();
       if (fieldName === 'rdAmount') {
+        document.getElementById(`depositorDetails-${monthIndex}`)?.focus();
+      } else if (fieldName === 'depositorDetails') {
         document.getElementById(`loanDisbursed-${monthIndex}`)?.focus();
       } else if (fieldName === 'loanDisbursed') {
         document.getElementById(`principalPaid-${monthIndex}`)?.focus();
@@ -303,11 +308,13 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
         dueDate: '',
         status: rowEdits.rdAmount >= member.monthlyContribution ? 'PAID' : (rowEdits.rdAmount > 0 ? 'PENDING' : 'PENDING'),
         amountPaid: rowEdits.rdAmount,
+        depositorDetails: rowEdits.depositorDetails,
         lateFeePaid: rowEdits.lateFee,
         updatedAt: Date.now()
       };
     } else {
       inst.amountPaid = rowEdits.rdAmount;
+      inst.depositorDetails = rowEdits.depositorDetails;
       inst.lateFeePaid = rowEdits.lateFee;
       inst.status = inst.amountPaid >= member.monthlyContribution ? 'PAID' : 'PENDING';
       inst.updatedAt = Date.now();
@@ -788,6 +795,9 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                       {t('monthlyContribution')}
                       <div style={{ fontSize: '11px', color: 'var(--success)', marginTop: '4px', fontWeight: 700 }}>(₹{formatCurrency(totalSaved)})</div>
                     </th>
+                    <th style={{ width: '150px', wordWrap: 'break-word' }}>
+                      {t('depositorDetails')}
+                    </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>
                       Loan Out. (₹)
                       <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>{sumLoanDisbursed > 0 ? `(₹${formatCurrency(sumLoanDisbursed)})` : '-'}</div>
@@ -858,6 +868,18 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                                 </div>
                               )}
                             </td>
+                            <td style={{ textAlign: 'left' }}>
+                              <input 
+                                id={`depositorDetails-${r.monthIndex}`} 
+                                type="text" 
+                                className="input-compact" 
+                                value={rowEdits.depositorDetails} 
+                                onChange={e => setRowEdits({ ...rowEdits, depositorDetails: e.target.value })} 
+                                onKeyDown={e => handleKeyDown(e, 'depositorDetails', r.monthIndex)}
+                                placeholder="Name / Details..."
+                                style={{ width: '130px', textAlign: 'left' }} 
+                              />
+                            </td>
                             <td style={{ textAlign: 'right' }}><input id={`loanDisbursed-${r.monthIndex}`} type="number" className="input-compact" value={rowEdits.loanDisbursed === 0 ? '' : rowEdits.loanDisbursed} onChange={e => setRowEdits({ ...rowEdits, loanDisbursed: Number(e.target.value) })} onKeyDown={e => handleKeyDown(e, 'loanDisbursed', r.monthIndex)} style={{ width: '80px', textAlign: 'right' }} /></td>
                             <td style={{ textAlign: 'right' }}><input id={`principalPaid-${r.monthIndex}`} type="number" className="input-compact" value={rowEdits.principalPaid === 0 ? '' : rowEdits.principalPaid} onChange={e => setRowEdits({ ...rowEdits, principalPaid: Number(e.target.value) })} onKeyDown={e => handleKeyDown(e, 'principalPaid', r.monthIndex)} style={{ width: '80px', textAlign: 'right' }} /></td>
                             <td style={{ textAlign: 'right' }}>
@@ -914,6 +936,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                         ) : (
                           <>
                             <td style={{ textAlign: 'right', color: r.rdAmount > 0 ? 'var(--success)' : 'var(--text-muted)' }}>{r.rdAmount > 0 ? `₹${formatCurrency(r.rdAmount)}` : '-'}</td>
+                            <td style={{ textAlign: 'left', fontSize: '11px', color: 'var(--text-muted)' }}>{r.depositorDetails || '-'}</td>
                             <td style={{ textAlign: 'right', color: r.loanDisbursed > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>{r.loanDisbursed > 0 ? `₹${formatCurrency(r.loanDisbursed)}` : '-'}</td>
                             <td style={{ textAlign: 'right', color: r.principalPaid > 0 ? 'var(--primary)' : 'var(--text-muted)' }}>{r.principalPaid > 0 ? `₹${formatCurrency(r.principalPaid)}` : '-'}</td>
                             <td style={{ textAlign: 'right', color: r.interestPaid > 0 ? 'inherit' : 'var(--text-muted)' }}>{r.interestPaid > 0 ? `₹${formatCurrency(r.interestPaid)}` : '-'}</td>
