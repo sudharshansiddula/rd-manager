@@ -105,7 +105,7 @@ function calculateRdInterest(
 }
 
 export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberProfileProps) => {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [installments, setInstallments] = useState<RDInstallment[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [repayments, setRepayments] = useState<LoanRepayment[]>([]);
@@ -116,6 +116,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
   const [profileFormData, setProfileFormData] = useState({ name: '', mobile: '', address: '', tenureMonths: 72, expectedMaturityAmount: 0 });
   const [isDeletingProfile, setIsDeletingProfile] = useState(false);
   const [deleteConfirmationName, setDeleteConfirmationName] = useState('');
+  const [showLateFeeTooltip, setShowLateFeeTooltip] = useState(false);
 
   const currentMonthRowRef = useRef<HTMLTableRowElement>(null);
   const targetRowRef = useRef<HTMLTableRowElement>(null);
@@ -158,6 +159,8 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
   // Calculate stats for summary
   const totalSaved = installments.reduce((sum, i) => sum + (i.amountPaid || 0), 0);
   const paidMonthsCount = Math.floor(totalSaved / (member.monthlyContribution || 1));
+  const lastPaymentMonthIndex = installments.reduce((max, i) => (i.amountPaid || 0) > 0 ? Math.max(max, i.monthIndex) : max, 0);
+  const maxPaidMonthIndex = Math.max(paidMonthsCount, lastPaymentMonthIndex);
   const totalPrincipalRepaid = repayments.reduce((sum, r) => sum + (r.principalPaid || 0), 0);
   const totalLoanPrincipal = loans.reduce((sum, l) => sum + (l.principalAmount || 0), 0);
   const currentLoanBal = totalLoanPrincipal - totalPrincipalRepaid;
@@ -424,7 +427,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
   if (monthsElapsed < 1) monthsElapsed = 1;
   if (monthsElapsed > member.tenureMonths) monthsElapsed = member.tenureMonths;
 
-  const pendingRDMonths = Math.max(0, monthsElapsed - paidMonthsCount);
+  const pendingRDMonths = Math.max(0, monthsElapsed - maxPaidMonthIndex);
   const pendingRDAmount = pendingRDMonths * member.monthlyContribution;
 
   const currentMonthRow = rows[Math.max(0, monthsElapsed - 1)];
@@ -435,6 +438,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
 
   // Calculate Late Fine based on settings
   let calculatedLateFee = 0;
+  const lateFeeBreakdown: { month: string; pendingAmount: number; rate: number; multiplier: number; periodText: string; fine: number; }[] = [];
 
   for (let i = 1; i <= monthsElapsed; i++) {
     const inst = installments.find(x => x.monthIndex === i);
@@ -460,18 +464,29 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
       let monthDue = 0;
 
       // 1. RD Late Fine Base
-      if (!inst || inst.amountPaid < member.monthlyContribution) {
+      if (i > maxPaidMonthIndex) {
         monthDue += member.monthlyContribution;
-      }
-
-      // 2. Loan Interest Late Fine Base
-      if (currentMonthRowInfo && currentMonthRowInfo.expectedInterest > currentMonthRowInfo.interestPaid) {
-        monthDue += (currentMonthRowInfo.expectedInterest - currentMonthRowInfo.interestPaid);
+        
+        // 2. Loan Interest Late Fine Base
+        if (currentMonthRowInfo && currentMonthRowInfo.expectedInterest > currentMonthRowInfo.interestPaid) {
+          monthDue += (currentMonthRowInfo.expectedInterest - currentMonthRowInfo.interestPaid);
+        }
       }
 
       // Calculate percentage based fine
       if (monthDue > 0 && settings.lateFine.rate > 0) {
-        calculatedLateFee += monthDue * (settings.lateFine.rate / 100) * multiplier;
+        const feeForMonth = monthDue * (settings.lateFine.rate / 100) * multiplier;
+        calculatedLateFee += feeForMonth;
+        
+        const periodText = settings.lateFine.period === 'DAILY' ? 'days' : settings.lateFine.period === 'MONTHLY' ? 'months' : 'years';
+        lateFeeBreakdown.push({
+          month: monthDate.toLocaleString('default', { month: 'short', year: 'numeric' }),
+          pendingAmount: monthDue,
+          rate: settings.lateFine.rate,
+          multiplier: multiplier,
+          periodText: periodText,
+          fine: Math.round(feeForMonth)
+        });
       }
     }
   }
@@ -754,7 +769,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                   <Info size={16} color="#b28900" />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '12px' }}>
                 <div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('pendingRDM')} ({pendingRDMonths} {t('months')})</div>
                   <div style={{ fontWeight: 600, fontSize: '14px' }}>₹{formatCurrency(pendingRDAmount)}</div>
@@ -762,6 +777,18 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                 <div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('pendingInterest')}</div>
                   <div style={{ fontWeight: 600, fontSize: '14px' }}>₹{formatCurrency(remainingInterestDue)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {t('lateFee')}
+                    <button 
+                      onClick={() => setShowLateFeeTooltip(true)} 
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: 'var(--text-muted)' }}
+                    >
+                      <Info size={12} />
+                    </button>
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: '14px' }}>₹{formatCurrency(calculatedLateFee)}</div>
                 </div>
                 <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: '16px' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('totalAmountToPay')}</div>
@@ -1141,6 +1168,66 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                   Delete
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Late Fee Calculation Modal Overlay */}
+      {showLateFeeTooltip && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+        }}>
+          <div style={{
+            background: 'var(--bg-app)', borderRadius: '12px', width: '100%', maxWidth: '500px',
+            maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Info size={20} color="var(--primary)" />
+                {t('lateFee')} {lang === 'te' ? 'వివరాలు' : 'Breakdown'}
+              </h3>
+              <button onClick={() => setShowLateFeeTooltip(false)} className="btn" style={{ padding: '8px', background: '#f1f3f5' }}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div style={{ padding: '20px', overflowY: 'auto' }}>
+              {lateFeeBreakdown.length > 0 ? (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+                  <thead style={{ position: 'sticky', top: '-20px', backgroundColor: 'var(--bg-app)', zIndex: 2, boxShadow: '0 1px 0 var(--border)' }}>
+                    <tr style={{ color: 'var(--text-muted)' }}>
+                      <th style={{ padding: '12px 4px 8px' }}>{lang === 'te' ? 'నెల' : 'Month'}</th>
+                      <th style={{ padding: '12px 4px 8px' }}>{lang === 'te' ? 'బాకీ అమౌంట్' : 'Pending'}</th>
+                      <th style={{ padding: '12px 4px 8px' }}>{lang === 'te' ? 'ఆలస్యం' : 'Delay'}</th>
+                      <th style={{ padding: '12px 4px 8px', textAlign: 'right' }}>{lang === 'te' ? 'పెనాల్టీ' : 'Fine'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lateFeeBreakdown.map((row, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '8px 4px', fontWeight: 500 }}>{row.month}</td>
+                        <td style={{ padding: '8px 4px' }}>₹{formatCurrency(row.pendingAmount)} <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({row.rate}%)</span></td>
+                        <td style={{ padding: '8px 4px' }}>{row.multiplier} {row.periodText}</td>
+                        <td style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 600, color: 'var(--danger)' }}>₹{row.fine}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot style={{ position: 'sticky', bottom: '-20px', backgroundColor: 'var(--bg-app)', zIndex: 2, boxShadow: '0 -1px 0 var(--border)' }}>
+                    <tr>
+                      <td colSpan={3} style={{ padding: '16px 4px', textAlign: 'right', fontWeight: 600 }}>{t('totalAmountToPay')} ({lateFeeBreakdown.length} {t('months')}):</td>
+                      <td style={{ padding: '16px 4px', textAlign: 'right', fontWeight: 700, fontSize: '15px', color: 'var(--danger)' }}>₹{formatCurrency(calculatedLateFee)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
+                  {lang === 'te' ? 'ఎటువంటి లేట్ ఫైన్ లేదు.' : 'No late fee pending.'}
+                </div>
+              )}
             </div>
           </div>
         </div>

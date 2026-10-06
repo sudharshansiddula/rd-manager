@@ -150,9 +150,16 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       if (monthsElapsed < 1) monthsElapsed = 1;
       if (monthsElapsed > member.tenureMonths) monthsElapsed = member.tenureMonths;
       
-      const paidMonths = installments.filter(i => i.status === 'PAID').length;
-      const pendingMonths = monthsElapsed - paidMonths;
-      const isCompleted = paidMonths >= member.tenureMonths;
+      const paidInstallments = installments.filter(i => i.status === 'PAID' || i.amountPaid > 0);
+      const paidMonths = paidInstallments.length;
+      
+      const totalAmountPaid = paidInstallments.reduce((sum, i) => sum + (i.amountPaid || 0), 0);
+      const paidMonthsCount = Math.floor(totalAmountPaid / (member.monthlyContribution || 1));
+      const lastPaymentMonthIndex = paidInstallments.reduce((max, i) => (i.amountPaid || 0) > 0 ? Math.max(max, i.monthIndex) : max, 0);
+      const maxPaidMonthIndex = Math.max(paidMonthsCount, lastPaymentMonthIndex);
+      
+      const pendingMonths = Math.max(0, monthsElapsed - maxPaidMonthIndex);
+      const isCompleted = maxPaidMonthIndex >= member.tenureMonths || paidMonths >= member.tenureMonths;
       
       const rdDueAmount = pendingMonths > 0 ? pendingMonths * member.monthlyContribution : 0;
       
@@ -167,6 +174,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       return {
         ...member,
         paidMonths,
+        maxPaidMonthIndex,
         pendingMonths,
         isCompleted,
         rdDueAmount,
@@ -351,12 +359,13 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
           multiplier = diffYears > 0 ? diffYears : 1;
         }
 
+        const mxPaid = member.maxPaidMonthIndex !== undefined ? member.maxPaidMonthIndex : member.paidMonths;
         let monthDue = 0;
-        if (!inst || inst.amountPaid < member.monthlyContribution) {
+        if (i > mxPaid) {
           monthDue += member.monthlyContribution;
-        }
-        if (currentMonthRowInfo && currentMonthRowInfo.expectedInterest > currentMonthRowInfo.interestPaid) {
-          monthDue += (currentMonthRowInfo.expectedInterest - currentMonthRowInfo.interestPaid);
+          if (currentMonthRowInfo && currentMonthRowInfo.expectedInterest > currentMonthRowInfo.interestPaid) {
+            monthDue += (currentMonthRowInfo.expectedInterest - currentMonthRowInfo.interestPaid);
+          }
         }
         if (monthDue > 0 && settings.lateFine.rate > 0) {
           calculatedLateFee += monthDue * (settings.lateFine.rate / 100) * multiplier;
@@ -367,7 +376,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
     const currentMonthRow = rows[Math.max(0, monthsElapsed - 1)];
     const remainingInterestDue = currentMonthRow ? Math.max(0, currentMonthRow.expectedInterest - currentMonthRow.interestPaid) : 0;
 
-    const pendingRDMonths = Math.max(0, monthsElapsed - member.paidMonths);
+    const pendingRDMonths = Math.max(0, monthsElapsed - (member.maxPaidMonthIndex !== undefined ? member.maxPaidMonthIndex : member.paidMonths));
     const pendingRDAmount = pendingRDMonths * member.monthlyContribution;
 
     const totalAmountDueThisMonth = pendingRDAmount + remainingInterestDue + calculatedLateFee;

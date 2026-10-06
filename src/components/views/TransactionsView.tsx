@@ -23,6 +23,10 @@ export const TransactionsView = () => {
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
   const [members, setMembers] = useState<Record<string, Member>>({});
   
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+  
   // Member dynamic stats (computed once per member)
   const [memberStats, setMemberStats] = useState<Record<string, any>>({});
 
@@ -48,124 +52,140 @@ export const TransactionsView = () => {
     intMax: ''
   });
 
+  const [isCalculating, setIsCalculating] = useState(true);
+
   const loadData = () => {
-    const db = StorageService.getDb();
+    setIsCalculating(true);
     
-    // 1. Build members map
-    const memberMap: Record<string, Member> = {};
-    db.members?.forEach(m => memberMap[m.id] = m);
-    setMembers(memberMap);
+    // Use setTimeout to yield to the UI thread (simulates background thread isolation)
+    // This allows the browser to render the loading state and prevents UI lag/freeze
+    setTimeout(() => {
+      try {
+        const db = StorageService.getDb();
+        
+        // 1. Build members map
+        const memberMap: Record<string, Member> = {};
+        db.members?.forEach(m => memberMap[m.id] = m);
+        
+        // 2. Build indexes for O(1) lookup
+        const instMap: Record<string, RDInstallment[]> = {};
+        const loanMap: Record<string, Loan[]> = {};
+        const repMap: Record<string, LoanRepayment[]> = {};
 
-    // 2. Build indexes for O(1) lookup
-    const instMap: Record<string, RDInstallment[]> = {};
-    const loanMap: Record<string, Loan[]> = {};
-    const repMap: Record<string, LoanRepayment[]> = {};
-
-    db.installments?.forEach(i => {
-      if (!instMap[i.memberId]) instMap[i.memberId] = [];
-      instMap[i.memberId].push(i);
-    });
-    db.loans?.forEach(l => {
-      if (!loanMap[l.memberId]) loanMap[l.memberId] = [];
-      loanMap[l.memberId].push(l);
-    });
-    db.loanRepayments?.forEach(r => {
-      if (!repMap[r.memberId]) repMap[r.memberId] = [];
-      repMap[r.memberId].push(r);
-    });
-
-    // 3. Compute member stats
-    const statsMap: Record<string, any> = {};
-    db.members?.forEach(member => {
-      const installments = instMap[member.id] || [];
-      const loans = loanMap[member.id] || [];
-      const repayments = repMap[member.id] || [];
-      
-      const totalSaved = installments.reduce((sum, i) => sum + (i.amountPaid || 0), 0);
-      const paidMonthsCount = Math.floor(totalSaved / (member.monthlyContribution || 1));
-      
-      const totalPrincipalRepaid = repayments.reduce((sum, r) => sum + (r.principalPaid || 0), 0);
-      const totalLoanPrincipal = loans.reduce((sum, l) => sum + (l.principalAmount || 0), 0);
-      const currentLoanBal = totalLoanPrincipal - totalPrincipalRepaid;
-
-      // Calculate if due
-      const start = new Date(member.startDate);
-      const now = new Date();
-      let monthsElapsed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()) + 1;
-      if (monthsElapsed < 1) monthsElapsed = 1;
-      if (monthsElapsed > member.tenureMonths) monthsElapsed = member.tenureMonths;
-      
-      const pendingRDMonths = Math.max(0, monthsElapsed - paidMonthsCount);
-      const pendingRDAmount = pendingRDMonths * member.monthlyContribution;
-      
-      statsMap[member.id] = {
-        paidMonthsCount,
-        totalSaved,
-        currentLoanBal,
-        pendingRDMonths,
-        pendingRDAmount,
-        isCompleted: paidMonthsCount >= member.tenureMonths
-      };
-    });
-    setMemberStats(statsMap);
-
-    // 3. Reconstruct History Entries
-    const historyMap = new Map<string, HistoryEntry>();
-    
-    const getEntry = (mId: string, mIdx: number, tStamp: number): HistoryEntry => {
-      const d = new Date(tStamp);
-      // Group by Day (YYYY-MM-DD) to merge edits done on the same day for the same month row
-      const dStr = d.toISOString().split('T')[0];
-      const key = `${mId}-${mIdx}-${dStr}`;
-      if (!historyMap.has(key)) {
-        historyMap.set(key, {
-          id: key,
-          timestamp: tStamp,
-          dateStr: dStr,
-          memberId: mId,
-          monthIndex: mIdx,
-          rdAmount: 0,
-          lateFee: 0,
-          loanDisbursed: 0,
-          principalPaid: 0,
-          interestPaid: 0
+        db.installments?.forEach(i => {
+          if (!instMap[i.memberId]) instMap[i.memberId] = [];
+          instMap[i.memberId].push(i);
         });
+        db.loans?.forEach(l => {
+          if (!loanMap[l.memberId]) loanMap[l.memberId] = [];
+          loanMap[l.memberId].push(l);
+        });
+        db.loanRepayments?.forEach(r => {
+          if (!repMap[r.memberId]) repMap[r.memberId] = [];
+          repMap[r.memberId].push(r);
+        });
+
+        // 3. Compute member stats
+        const statsMap: Record<string, any> = {};
+        db.members?.forEach(member => {
+          const installments = instMap[member.id] || [];
+          const loans = loanMap[member.id] || [];
+          const repayments = repMap[member.id] || [];
+          
+          const totalSaved = installments.reduce((sum, i) => sum + (i.amountPaid || 0), 0);
+          const paidMonthsCount = Math.floor(totalSaved / (member.monthlyContribution || 1));
+          const lastPaymentMonthIndex = installments.reduce((max, i) => (i.amountPaid || 0) > 0 ? Math.max(max, i.monthIndex) : max, 0);
+          const maxPaidMonthIndex = Math.max(paidMonthsCount, lastPaymentMonthIndex);
+          
+          const totalPrincipalRepaid = repayments.reduce((sum, r) => sum + (r.principalPaid || 0), 0);
+          const totalLoanPrincipal = loans.reduce((sum, l) => sum + (l.principalAmount || 0), 0);
+          const currentLoanBal = totalLoanPrincipal - totalPrincipalRepaid;
+
+          const start = new Date(member.startDate);
+          const now = new Date();
+          let monthsElapsed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()) + 1;
+          if (monthsElapsed < 1) monthsElapsed = 1;
+          if (monthsElapsed > member.tenureMonths) monthsElapsed = member.tenureMonths;
+          
+          const pendingRDMonths = Math.max(0, monthsElapsed - maxPaidMonthIndex);
+          const pendingRDAmount = pendingRDMonths * member.monthlyContribution;
+          
+          statsMap[member.id] = {
+            paidMonthsCount,
+            totalSaved,
+            currentLoanBal,
+            pendingRDMonths,
+            pendingRDAmount,
+            isCompleted: paidMonthsCount >= member.tenureMonths
+          };
+        });
+        
+        // 4. Reconstruct History Entries
+        const historyMap = new Map<string, HistoryEntry>();
+        
+        const getEntry = (mId: string, mIdx: number, tStamp: number): HistoryEntry => {
+          const d = new Date(tStamp);
+          const dStr = d.toISOString().split('T')[0];
+          const key = `${mId}-${mIdx}-${dStr}`;
+          if (!historyMap.has(key)) {
+            historyMap.set(key, {
+              id: key,
+              timestamp: tStamp,
+              dateStr: dStr,
+              memberId: mId,
+              monthIndex: mIdx,
+              rdAmount: 0,
+              lateFee: 0,
+              loanDisbursed: 0,
+              principalPaid: 0,
+              interestPaid: 0
+            });
+          }
+          return historyMap.get(key)!;
+        };
+
+        db.installments?.forEach(inst => {
+          if (!inst.updatedAt || inst.amountPaid === 0 && inst.lateFeePaid === 0) return;
+          const entry = getEntry(inst.memberId, inst.monthIndex, inst.updatedAt);
+          entry.rdAmount = inst.amountPaid;
+          entry.lateFee = inst.lateFeePaid;
+          if (inst.updatedAt > entry.timestamp) entry.timestamp = inst.updatedAt;
+        });
+
+        db.loanRepayments?.forEach(rep => {
+          if (!rep.createdAt || (rep.principalPaid === 0 && rep.interestPaid === 0)) return;
+          const entry = getEntry(rep.memberId, rep.monthIndex || 0, rep.createdAt);
+          entry.principalPaid = rep.principalPaid;
+          entry.interestPaid = rep.interestPaid;
+          if (rep.createdAt > entry.timestamp) entry.timestamp = rep.createdAt;
+        });
+
+        db.loans?.forEach(loan => {
+          if (!loan.createdAt || loan.principalAmount === 0) return;
+          const m = memberMap[loan.memberId];
+          let monthIndex = 0;
+          if (m) {
+            const sDate = new Date(m.startDate);
+            const lDate = new Date(loan.disbursementDate);
+            monthIndex = (lDate.getFullYear() - sDate.getFullYear()) * 12 + (lDate.getMonth() - sDate.getMonth()) + 1;
+          }
+          const entry = getEntry(loan.memberId, monthIndex, loan.createdAt);
+          entry.loanDisbursed = loan.principalAmount;
+          if (loan.createdAt > entry.timestamp) entry.timestamp = loan.createdAt;
+        });
+
+        const entries = Array.from(historyMap.values());
+        
+        // Batch React state updates
+        setMembers(memberMap);
+        setMemberStats(statsMap);
+        setHistoryEntries(entries);
+        setIsCalculating(false);
+      } catch (err) {
+        console.error("Error calculating transactions:", err);
+        setIsCalculating(false);
       }
-      return historyMap.get(key)!;
-    };
-
-    db.installments?.forEach(inst => {
-      if (!inst.updatedAt || inst.amountPaid === 0 && inst.lateFeePaid === 0) return;
-      const entry = getEntry(inst.memberId, inst.monthIndex, inst.updatedAt);
-      entry.rdAmount = inst.amountPaid;
-      entry.lateFee = inst.lateFeePaid;
-      if (inst.updatedAt > entry.timestamp) entry.timestamp = inst.updatedAt;
-    });
-
-    db.loanRepayments?.forEach(rep => {
-      if (!rep.createdAt || (rep.principalPaid === 0 && rep.interestPaid === 0)) return;
-      const entry = getEntry(rep.memberId, rep.monthIndex || 0, rep.createdAt);
-      entry.principalPaid = rep.principalPaid;
-      entry.interestPaid = rep.interestPaid;
-      if (rep.createdAt > entry.timestamp) entry.timestamp = rep.createdAt;
-    });
-
-    db.loans?.forEach(loan => {
-      if (!loan.createdAt || loan.principalAmount === 0) return;
-      const m = memberMap[loan.memberId];
-      let monthIndex = 0;
-      if (m) {
-        const sDate = new Date(m.startDate);
-        const lDate = new Date(loan.disbursementDate);
-        monthIndex = (lDate.getFullYear() - sDate.getFullYear()) * 12 + (lDate.getMonth() - sDate.getMonth()) + 1;
-      }
-      const entry = getEntry(loan.memberId, monthIndex, loan.createdAt);
-      entry.loanDisbursed = loan.principalAmount;
-      if (loan.createdAt > entry.timestamp) entry.timestamp = loan.createdAt;
-    });
-
-    const entries = Array.from(historyMap.values());
-    setHistoryEntries(entries);
+    }, 50); // Small delay to let the UI paint the loading state
   };
 
   useEffect(() => {
@@ -335,6 +355,26 @@ export const TransactionsView = () => {
   const totalAmount = filteredEntries.reduce((sum, e) => sum + e.rdAmount + e.principalPaid + e.interestPaid + e.lateFee, 0);
   const totalLoanIssued = filteredEntries.reduce((sum, e) => sum + e.loanDisbursed, 0);
   const totalRecords = filteredEntries.length;
+  
+  const totalPages = Math.ceil(totalRecords / itemsPerPage);
+  const paginatedEntries = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return sortedEntries.slice(start, start + itemsPerPage);
+  }, [sortedEntries, currentPage]);
+
+  if (isCalculating) {
+    return (
+      <div className="view-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '400px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <div style={{ width: '40px', height: '40px', border: '4px solid #e0e7ff', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+          <div style={{ color: '#4f46e5', fontWeight: 600, fontSize: '16px' }}>Processing Data...</div>
+          <style>
+            {`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}
+          </style>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="view-container">
@@ -499,14 +539,14 @@ export const TransactionsView = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedEntries.length === 0 ? (
+              {paginatedEntries.length === 0 ? (
                 <tr>
                   <td colSpan={10} style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
                     {t('noEntriesFound')}
                   </td>
                 </tr>
               ) : (
-                sortedEntries.map((entry, index) => {
+                paginatedEntries.map((entry, index) => {
                   const member = members[entry.memberId];
                   const stats = memberStats[entry.memberId] || {};
                   
@@ -626,6 +666,32 @@ export const TransactionsView = () => {
             </tbody>
           </table>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', marginTop: '16px', background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <div style={{ color: '#6b7280', fontSize: '14px' }}>
+            Showing {Math.min(totalRecords, (currentPage - 1) * itemsPerPage + 1)} to {Math.min(totalRecords, currentPage * itemsPerPage)} of {totalRecords} entries
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #d1d5db', background: currentPage === 1 ? '#f3f4f6' : '#fff', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 600, color: '#4b5563' }}
+            >
+              Previous
+            </button>
+            <div style={{ padding: '6px 12px', fontWeight: 600, color: '#111827', fontSize: '14px' }}>Page {currentPage} of {totalPages}</div>
+            <button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #d1d5db', background: currentPage === totalPages ? '#f3f4f6' : '#fff', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontWeight: 600, color: '#4b5563' }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
