@@ -4,6 +4,9 @@ export interface DashboardStatsResult {
   totalMembers: number;
   totalRDCollected: number;
   totalBonusPayable: number;
+  activeRDCollected: number;
+  activeBonusPayable: number;
+  totalSettlementPaid: number;
   totalOwedToMembers: number;
   totalLoanGiven: number;
   totalLoanRecovered: number;
@@ -89,6 +92,9 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
   let totalMembers = 0;
   let totalRDCollected = 0;
   let totalBonusPayable = 0;
+  let activeRDCollected = 0;
+  let activeBonusPayable = 0;
+  let totalSettlementPaid = 0;
   let totalLoanGiven = 0;
   let totalLoanRecovered = 0;
   let totalLoanInterestEarned = 0;
@@ -179,7 +185,17 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
     else onTimeMembers++;
 
     const rdCalc = calculateRdInterest(mInsts, m.tenureMonths, m.monthlyContribution, m.expectedMaturityAmount, monthsElapsed);
-    totalBonusPayable += rdCalc.totalInterest;
+    const earnedBonus = rdCalc.totalInterest;
+    totalBonusPayable += earnedBonus;
+
+    const isSettlementMode = m.status === 'closed' || m.status === 'matured';
+    if (isSettlementMode) {
+      const settlementPaid = m.settlementAmountPaid ? Number(m.settlementAmountPaid) : 0;
+      totalSettlementPaid += settlementPaid;
+    } else {
+      activeRDCollected += mRDCollected;
+      activeBonusPayable += earnedBonus;
+    }
 
     const remainingMonths = Math.max(0, m.tenureMonths - monthsElapsed);
     futureRDExpected += (remainingMonths * m.monthlyContribution);
@@ -231,7 +247,7 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
     if ((mIntEarned - mIntCollected) > 0) pendingInterestMembers++;
   });
 
-  const totalOwedToMembers = totalRDCollected + totalBonusPayable;
+  const totalOwedToMembers = activeRDCollected + activeBonusPayable;
   const totalOutstandingLoan = totalLoanGiven - totalLoanRecovered;
   const totalLoanInterestPending = Math.max(0, totalLoanInterestEarned - totalLoanInterestCollected);
   
@@ -239,11 +255,11 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
   const totalExpectedFutureLiability = futureRDExpected + futureBonusExpected;
 
   const actualIncome = totalLoanInterestCollected + totalLateFineCollected;
-  const actualOutflow = totalBonusPayable;
+  const actualOutflow = activeBonusPayable + totalSettlementPaid;
   const netPosition = actualIncome - actualOutflow;
 
   const totalCashIn = totalRDCollected + totalLoanRecovered + totalLoanInterestCollected + totalLateFineCollected;
-  const totalCashOut = totalLoanGiven;
+  const totalCashOut = totalLoanGiven + totalSettlementPaid;
   const cashInHand = totalCashIn - totalCashOut;
 
   const chartData = Array.from(monthMap.entries()).map(([key, val]) => {
@@ -260,6 +276,9 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
     totalMembers,
     totalRDCollected,
     totalBonusPayable,
+    activeRDCollected,
+    activeBonusPayable,
+    totalSettlementPaid,
     totalOwedToMembers,
     totalLoanGiven,
     totalLoanRecovered,

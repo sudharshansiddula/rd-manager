@@ -76,7 +76,7 @@ const localT = {
   ttTotalIntCol: { en: 'Total loan interest actually collected from the members till date.', te: 'సభ్యుల నుండి ఇప్పటి వరకు నిజంగా వసూలైన మొత్తం లోన్ వడ్డీ.' },
   ttLateFeeCol: { en: 'Total late fines collected from the members for delayed payments.', te: 'ఆలస్యంగా చెల్లించినందుకు సభ్యుల నుండి వసూలైన మొత్తం లేట్ ఫైన్.' },
   ttActualIncome: { en: 'Total Actual Income generated (Interest Collected + Late Fine Collected).', te: 'సంస్థకు వచ్చిన వాస్తవ ఆదాయం (వసూలైన వడ్డీ + లేట్ ఫైన్).' },
-  ttActualOutflow: { en: 'Total bonus earned by the members so far, which is an expense/outflow for the firm.', te: 'సభ్యులకు ఇవ్వాల్సిన బోనస్, ఇది సంస్థకు అయ్యే వాస్తవ ఖర్చు.' },
+  ttActualOutflow: { en: 'Total actual outflow including bonus for active members and final settlements paid to closed members.', te: 'సభ్యులకు ఇవ్వాల్సిన బోనస్ మరియు క్లోజ్ అయిన సభ్యులకు చెల్లించిన ఫైనల్ సెటిల్మెంట్ల మొత్తం. ఇది సంస్థకు అయ్యే వాస్తవ ఖర్చు.' },
   ttNetPosition: { en: 'Net Position = Actual Income - Actual Outflow. Shows if the firm is currently in Profit or Loss.', te: 'నికర స్థితి = వాస్తవ ఆదాయం - వాస్తవ ఖర్చు. సంస్థ ప్రస్తుతం లాభంలో ఉందా లేదా నష్టంలో ఉందా అని తెలుపుతుంది.' },
   ttTotalCashCol: { en: 'Sum of all money received: RD + Loan Principal Recovered + Loan Interest Collected + Late Fine Collected.', te: 'వచ్చిన మొత్తం డబ్బు: పొదుపు + వసూలైన అప్పు అసలు + వసూలైన వడ్డీ + లేట్ ఫైన్.' },
   ttCashInHand: { en: 'Total Money Collected - Total Loans Given. Shows the actual physical cash available.', te: 'మొత్తం వసూలైన డబ్బు - ఇచ్చిన మొత్తం అప్పు. ప్రస్తుతం చేతిలో ఉన్న నగదు (Cash) ని తెలుపుతుంది.' }
@@ -311,11 +311,11 @@ export const DashboardView = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                 <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'moneyCollected')} <InfoIcon tooltip={getT(lang, 'ttMoneyCollected')} /></span>
-                <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{formatCurrency(stats.totalRDCollected)}</span>
+                <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{formatCurrency(stats.activeRDCollected)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                 <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'bonusPayable')} <InfoIcon tooltip={getT(lang, 'ttBonusPayable')} /></span>
-                <span style={{ fontWeight: 600, color: '#ef4444' }}>- ₹{formatCurrency(stats.totalBonusPayable)}</span>
+                <span style={{ fontWeight: 600, color: '#ef4444' }}>+ ₹{formatCurrency(stats.activeBonusPayable)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', borderTop: '1px dashed #e5e7eb', paddingTop: '8px' }}>
                 <span style={{ color: '#111827', fontWeight: 600, display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalOwedToMembers')} <InfoIcon tooltip={getT(lang, 'ttTotalOwed')} /></span>

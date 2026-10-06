@@ -118,6 +118,33 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
   const [deleteConfirmationName, setDeleteConfirmationName] = useState('');
   const [showLateFeeTooltip, setShowLateFeeTooltip] = useState(false);
 
+  const [settlementData, setSettlementData] = useState({
+    date: member.settlementDate || '',
+    amountPaid: member.settlementAmountPaid || ''
+  });
+
+  const [includeSavings, setIncludeSavings] = useState(true);
+  const [includeBonus, setIncludeBonus] = useState(true);
+  const [includeLoan, setIncludeLoan] = useState(true);
+  const [includeInterest, setIncludeInterest] = useState(true);
+  const [includeLateFee, setIncludeLateFee] = useState(true);
+
+  const handleSaveSettlement = (field: 'date' | 'amountPaid', value: any) => {
+    setSettlementData(prev => {
+      const updated = { ...prev, [field]: value };
+      const db = StorageService.getDb();
+      const m = db.members.find(x => x.id === member.id);
+      if (m) {
+        if (field === 'date') m.settlementDate = value;
+        if (field === 'amountPaid') m.settlementAmountPaid = Number(value);
+        StorageService.saveDb(db);
+        if (field === 'date') member.settlementDate = value;
+        if (field === 'amountPaid') member.settlementAmountPaid = Number(value);
+      }
+      return updated;
+    });
+  };
+
   const currentMonthRowRef = useRef<HTMLTableRowElement>(null);
   const targetRowRef = useRef<HTMLTableRowElement>(null);
 
@@ -514,10 +541,10 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
   }, [installments, member, isCompleted, monthsElapsed, closeDateStr]);
 
   const earnedBonus = Math.round(rdCalcResult.totalInterest);
-  const totalEarnedSoFar = rdCalcResult.currentBalance;
+  const activeSavingsAmount = Math.round(rdCalcResult.totalContribution);
 
-  const totalToPayMember = Math.round(totalEarnedSoFar);
-  const totalDeductions = currentLoanBal + remainingInterestDue;
+  const totalToPayMember = (includeSavings ? activeSavingsAmount : 0) + (includeBonus ? earnedBonus : 0);
+  const totalDeductions = (includeLoan ? currentLoanBal : 0) + (includeInterest ? remainingInterestDue : 0) + (includeLateFee ? calculatedLateFee : 0);
   const netSettlement = totalToPayMember - totalDeductions;
 
   const minMonthDate = new Date(member.startDate);
@@ -663,7 +690,31 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
         </div>
 
         {/* Dashboards Section */}
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '24px' }}>
+        {(() => {
+          const sumRD = totalSaved;
+          const sumLoanDisbursed = rows.reduce((sum, r) => sum + (r.loanDisbursed || 0), 0);
+          const sumPrincipalPaid = rows.reduce((sum, r) => sum + (r.principalPaid || 0), 0);
+          const sumInterestPaidDash = rows.reduce((sum, r) => sum + (r.interestPaid || 0), 0);
+          const sumLateFeeDash = rows.reduce((sum, r) => sum + (r.lateFee || 0), 0);
+          
+          const totalEarningsReceived = sumInterestPaidDash + sumLateFeeDash;
+          const totalCashReceived = sumRD + sumPrincipalPaid + sumInterestPaidDash + sumLateFeeDash;
+
+          let netProfitLossValue = 0;
+          let totalCashGiven = 0;
+          let signedSettlementPaid = 0;
+          
+          if (isSettlementMode) {
+            const settlementPaid = Number(settlementData.amountPaid) || 0;
+            signedSettlementPaid = netSettlement >= 0 ? settlementPaid : -settlementPaid;
+            totalCashGiven = sumLoanDisbursed + signedSettlementPaid;
+            netProfitLossValue = totalCashReceived - totalCashGiven;
+          } else {
+            netProfitLossValue = totalEarningsReceived - earnedBonus;
+          }
+
+          return (
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '24px' }}>
 
           {/* RD Dashboard */}
           <div className="card" style={{ flex: '1 1 300px', padding: '16px', borderLeft: '4px solid var(--primary)' }}>
@@ -699,7 +750,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
               <div style={{ gridColumn: '1 / span 2', paddingTop: '8px', borderTop: '1px dashed var(--border)' }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('currentValueVsMaturity')}</div>
                 <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--primary)' }}>
-                  ₹{formatCurrency(Math.round(totalEarnedSoFar))} <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>/ ₹{formatCurrency(member.expectedMaturityAmount)}</span>
+                  ₹{formatCurrency(Math.round(activeSavingsAmount + earnedBonus))} <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>/ ₹{formatCurrency(member.expectedMaturityAmount)}</span>
                 </div>
               </div>
             </div>
@@ -714,7 +765,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                 <Info size={16} color="var(--danger)" />
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('remainingPrincipal')}</div>
                 <div style={{ fontWeight: 600, fontSize: '14px', color: currentLoanBal > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(currentLoanBal)}</div>
@@ -723,9 +774,13 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('interestDueDash')}</div>
                 <div style={{ fontWeight: 600, fontSize: '14px', color: remainingInterestDue > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(remainingInterestDue)}</div>
               </div>
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('lblLateFee')}</div>
+                <div style={{ fontWeight: 600, fontSize: '14px', color: calculatedLateFee > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(calculatedLateFee)}</div>
+              </div>
               <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: '12px' }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('totalAmountToPay')}</div>
-                <div style={{ fontWeight: 700, fontSize: '15px', color: (currentLoanBal + remainingInterestDue) > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(currentLoanBal + remainingInterestDue)}</div>
+                <div style={{ fontWeight: 700, fontSize: '15px', color: (currentLoanBal + remainingInterestDue + calculatedLateFee) > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(currentLoanBal + remainingInterestDue + calculatedLateFee)}</div>
               </div>
             </div>
           </div>
@@ -742,12 +797,50 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('totalAmountToPayMember')}</div>
-                  <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--success)' }}>₹{formatCurrency(totalToPayMember)}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {t('totalAmountToPayMember')}
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginLeft: '6px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', opacity: includeSavings ? 1 : 0.5 }}>
+                        <input type="checkbox" checked={includeSavings} onChange={(e) => setIncludeSavings(e.target.checked)} style={{ accentColor: 'var(--success)' }} />
+                        {t('lblSavings')}
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', opacity: includeBonus ? 1 : 0.5 }}>
+                        <input type="checkbox" checked={includeBonus} onChange={(e) => setIncludeBonus(e.target.checked)} style={{ accentColor: 'var(--success)' }} />
+                        {t('lblBonus')}
+                      </label>
+                    </div>
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: '15px', color: (includeSavings || includeBonus) ? 'var(--success)' : 'var(--text-muted)' }}>
+                    ₹{formatCurrency(totalToPayMember)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', fontWeight: 500 }}>
+                    (₹{formatCurrency(activeSavingsAmount)} + ₹{formatCurrency(earnedBonus)})
+                  </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('totalDeductions')}</div>
-                  <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--danger)' }}>₹{formatCurrency(totalDeductions)}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {t('totalDeductions')}
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginLeft: '6px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', opacity: includeLoan ? 1 : 0.5 }}>
+                        <input type="checkbox" checked={includeLoan} onChange={(e) => setIncludeLoan(e.target.checked)} style={{ accentColor: 'var(--danger)' }} />
+                        {t('lblLoan')}
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', opacity: includeInterest ? 1 : 0.5 }}>
+                        <input type="checkbox" checked={includeInterest} onChange={(e) => setIncludeInterest(e.target.checked)} style={{ accentColor: 'var(--danger)' }} />
+                        {t('lblInterest')}
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', opacity: includeLateFee ? 1 : 0.5 }}>
+                        <input type="checkbox" checked={includeLateFee} onChange={(e) => setIncludeLateFee(e.target.checked)} style={{ accentColor: 'var(--danger)' }} />
+                        {t('lblLateFee')}
+                      </label>
+                    </div>
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: '15px', color: (includeLoan || includeInterest || includeLateFee) ? 'var(--danger)' : 'var(--text-muted)' }}>
+                    ₹{formatCurrency(totalDeductions)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', fontWeight: 500 }}>
+                    (₹{formatCurrency(currentLoanBal)} + ₹{formatCurrency(remainingInterestDue)} + ₹{formatCurrency(calculatedLateFee)})
+                  </div>
                 </div>
                 <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: '16px' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('netSettlement')}</div>
@@ -756,6 +849,35 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                   </div>
                   <div style={{ fontSize: '12px', marginTop: '4px', color: netSettlement >= 0 ? 'var(--primary)' : 'var(--danger)', fontWeight: 500 }}>
                     {netSettlement >= 0 ? t('wePay') : t('memberPays')}
+                  </div>
+                </div>
+              </div>
+              
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed var(--danger)' }}>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--danger)', marginBottom: '8px' }}>
+                  {t('settlementPaymentDetails')}
+                </div>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>{t('datePaid')}</div>
+                    <input 
+                      type="date" 
+                      className="input-compact" 
+                      value={settlementData.date} 
+                      onChange={(e) => handleSaveSettlement('date', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                      {netSettlement >= 0 ? t('amountPaidToMember') : t('amountPaidToUs')}
+                    </div>
+                    <input 
+                      type="number" 
+                      className="input-compact" 
+                      value={settlementData.amountPaid} 
+                      onChange={(e) => handleSaveSettlement('amountPaid', e.target.value)}
+                      placeholder="Enter amount"
+                    />
                   </div>
                 </div>
               </div>
@@ -798,7 +920,66 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             </div>
           )}
 
+          {/* Transactions / P&L Dashboard */}
+          <div className="card" style={{ flex: '1 1 300px', padding: '16px', borderLeft: `4px solid ${netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)'}`, backgroundColor: netProfitLossValue >= 0 ? '#f6ffed' : '#fff0f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+              <Wallet size={18} />
+              <strong style={{ fontSize: '14px' }}>{t('transactionsCardTitle')}</strong>
+              <div title={isSettlementMode ? t('transactionsCardTooltipSettled') : t('transactionsCardTooltipActive')} style={{ cursor: 'help', display: 'flex', marginLeft: 'auto' }}>
+                <Info size={16} color={netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)'} />
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '12px' }}>
+              {!isSettlementMode ? (
+                <>
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('totalEarningsReceived')}</div>
+                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-main)' }}>
+                      ₹{formatCurrency(totalEarningsReceived)}
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
+                        (₹{formatCurrency(sumInterestPaidDash)} + ₹{formatCurrency(sumLateFeeDash)})
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('bonusGiven')}</div>
+                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-main)' }}>₹{formatCurrency(earnedBonus)}</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('totalCashReceivedPL')}</div>
+                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-main)' }}>
+                      ₹{formatCurrency(totalCashReceived)}
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
+                        (RD+Repayments+Int+Fine)
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('totalCashGivenPL')}</div>
+                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-main)' }}>
+                      ₹{formatCurrency(totalCashGiven)}
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
+                        ({sumLoanDisbursed ? 'Loan + ' : ''}Settlement)
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: '12px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{netProfitLossValue >= 0 ? t('netProfit') : t('netLoss')}</div>
+                <div style={{ fontWeight: 700, fontSize: '18px', color: netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                  {netProfitLossValue < 0 ? '-' : '+'}₹{formatCurrency(Math.abs(netProfitLossValue))}
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
+          );
+        })()}
       </div>
 
       {/* Table Column Sums */}

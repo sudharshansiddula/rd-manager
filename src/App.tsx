@@ -31,6 +31,18 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [navParams, setNavParams] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  const [zoomLevel, setZoomLevel] = useState<number>(() => {
+    return parseInt(localStorage.getItem('app_zoom_level') || '100', 10);
+  });
+
+  useEffect(() => {
+    (document.body.style as any).zoom = `${zoomLevel}%`;
+    localStorage.setItem('app_zoom_level', zoomLevel.toString());
+  }, [zoomLevel]);
+
+  const handleZoomIn = () => setZoomLevel(z => Math.min(z + 10, 200));
+  const handleZoomOut = () => setZoomLevel(z => Math.max(z - 10, 50));
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -136,6 +148,35 @@ function App() {
             <div style={{ flex: 1, textAlign: 'center', zIndex: 1, fontSize: '13px', fontWeight: 600, color: lang === 'en' ? '#fff' : 'rgba(255,255,255,0.6)', padding: '4px 0', transition: 'color 0.3s' }}>
               English
             </div>
+          </div>
+        </div>
+
+        {/* Zoom Controls */}
+        <div style={{ padding: '0 16px', marginBottom: '24px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', textAlign: 'center' }}>
+            {t('zoomLabel')}
+          </div>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '20px',
+            padding: '4px 12px'
+          }}>
+            <button 
+              onClick={handleZoomOut}
+              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '4px 8px', fontSize: '18px', fontWeight: 'bold' }}
+            >
+              -
+            </button>
+            <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{zoomLevel}%</span>
+            <button 
+              onClick={handleZoomIn}
+              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '4px 8px', fontSize: '18px', fontWeight: 'bold' }}
+            >
+              +
+            </button>
           </div>
         </div>
 

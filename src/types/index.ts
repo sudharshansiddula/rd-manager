@@ -14,6 +14,8 @@ export interface Member {
   
   createdAt: number; // timestamp
   lastWhatsappSentDate?: string;
+  settlementDate?: string;
+  settlementAmountPaid?: number;
 }
 
 export interface RDInstallment {

@@ -49,6 +49,30 @@ function calculateMaturityAmount(P: number, n: number, r: number) {
   return P * (Math.pow(1 + r, n) - 1) / r;
 }
 
+function calculateRdInterest(
+  installments: any[],
+  tenureMonths: number,
+  monthlyContribution: number,
+  expectedMaturityAmount: number,
+  monthsElapsed: number
+) {
+  const monthlyRate = getMonthlyRate(monthlyContribution, tenureMonths, expectedMaturityAmount);
+  let previousBalance = 0;
+  let totalContribution = 0;
+  let totalInterest = 0;
+
+  for (let i = 1; i <= monthsElapsed; i++) {
+    const inst = installments.find(x => x.monthIndex === i);
+    const amountPaid = inst ? inst.amountPaid : 0;
+    const monthlyInterest = previousBalance * monthlyRate;
+    const currentBalance = previousBalance + monthlyInterest + amountPaid;
+    totalContribution += amountPaid;
+    totalInterest += monthlyInterest;
+    previousBalance = currentBalance;
+  }
+  return { totalContribution, totalInterest, currentBalance: previousBalance };
+}
+
 interface MembersViewProps {
   navParams?: any;
   clearNavParams?: () => void;
@@ -140,6 +164,14 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       loansByMember[l.memberId].push(l);
     });
 
+    const loanRepaymentsByMember: Record<string, any[]> = {};
+    StorageService.getLoanRepayments().forEach(r => {
+      if (!loanRepaymentsByMember[r.memberId]) loanRepaymentsByMember[r.memberId] = [];
+      loanRepaymentsByMember[r.memberId].push(r);
+    });
+
+    const settings = StorageService.getSettings();
+
     return members.map(member => {
       const installments = installmentsByMember[member.id] || [];
       const loans = (loansByMember[member.id] || []).filter((l: any) => l.status === 'ACTIVE');
@@ -151,25 +183,102 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       if (monthsElapsed > member.tenureMonths) monthsElapsed = member.tenureMonths;
       
       const paidInstallments = installments.filter(i => i.status === 'PAID' || i.amountPaid > 0);
-      const paidMonths = paidInstallments.length;
+      const totalAmountPaid = installments.reduce((sum, i) => sum + (i.amountPaid || 0), 0);
       
-      const totalAmountPaid = paidInstallments.reduce((sum, i) => sum + (i.amountPaid || 0), 0);
       const paidMonthsCount = Math.floor(totalAmountPaid / (member.monthlyContribution || 1));
-      const lastPaymentMonthIndex = paidInstallments.reduce((max, i) => (i.amountPaid || 0) > 0 ? Math.max(max, i.monthIndex) : max, 0);
+      const lastPaymentMonthIndex = installments.reduce((max, i) => (i.amountPaid || 0) > 0 ? Math.max(max, i.monthIndex) : max, 0);
       const maxPaidMonthIndex = Math.max(paidMonthsCount, lastPaymentMonthIndex);
       
       const pendingMonths = Math.max(0, monthsElapsed - maxPaidMonthIndex);
-      const isCompleted = maxPaidMonthIndex >= member.tenureMonths || paidMonths >= member.tenureMonths;
+      const isCompleted = totalAmountPaid >= (member.tenureMonths * member.monthlyContribution);
+      const paidMonths = paidMonthsCount;
+      const totalSaved = totalAmountPaid;
       
       const rdDueAmount = pendingMonths > 0 ? pendingMonths * member.monthlyContribution : 0;
       
-      let loanPrincipal = 0;
-      let loanInterest = 0;
-      if (loans.length > 0) {
-        const activeLoan = loans[0];
-        loanPrincipal = activeLoan.principalOutstanding;
-        loanInterest = (loanPrincipal * activeLoan.interestRatePerMonth) / 100;
+      const allLoans = loansByMember[member.id] || [];
+      const repayments = loanRepaymentsByMember[member.id] || [];
+
+      let runningLoanBal = 0;
+      let runningInterestDue = 0;
+      let calculatedLateFee = 0;
+
+      for (let i = 1; i <= monthsElapsed; i++) {
+        const monthDate = new Date(start.getFullYear(), start.getMonth() + (i - 1), 1);
+        
+        const loansThisMonth = allLoans.filter(l => {
+          const ld = new Date(l.disbursementDate);
+          return ld.getFullYear() === monthDate.getFullYear() && ld.getMonth() === monthDate.getMonth();
+        });
+        const loanDisbursedThisMonth = loansThisMonth.reduce((s, l) => s + l.principalAmount, 0);
+
+        const monthlyInterest = runningLoanBal > 0 ? Math.round((runningLoanBal * (settings.loanInterestRate ?? 2)) / 100) : 0;
+        runningInterestDue += monthlyInterest;
+
+        runningLoanBal += loanDisbursedThisMonth;
+        
+        const rep = repayments.find(x => x.monthIndex === i);
+        if (rep) {
+          runningLoanBal -= rep.principalPaid;
+          runningInterestDue -= rep.interestPaid;
+        }
+        
+        runningLoanBal = Math.max(0, runningLoanBal);
+        runningInterestDue = Math.max(0, runningInterestDue);
+
+        // Late fee calculation
+        const dueDate = new Date(start.getFullYear(), start.getMonth() + (i - 1), settings.lateFine.dueDate);
+        if (now > dueDate) {
+           let multiplier = 0;
+           if (settings.lateFine.period === 'DAILY') {
+             const diffTime = Math.abs(now.getTime() - dueDate.getTime());
+             multiplier = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+           } else if (settings.lateFine.period === 'MONTHLY') {
+             const diffMonths = (now.getFullYear() - dueDate.getFullYear()) * 12 + (now.getMonth() - dueDate.getMonth());
+             multiplier = diffMonths > 0 ? diffMonths : 1;
+           } else if (settings.lateFine.period === 'YEARLY') {
+             const diffYears = Math.ceil(((now.getFullYear() - dueDate.getFullYear()) * 12 + (now.getMonth() - dueDate.getMonth())) / 12);
+             multiplier = diffYears > 0 ? diffYears : 1;
+           }
+
+           let monthDue = 0;
+           if (i > maxPaidMonthIndex) {
+             monthDue += member.monthlyContribution;
+             if (runningInterestDue > 0) {
+               monthDue += runningInterestDue;
+             }
+           }
+           if (monthDue > 0 && settings.lateFine.rate > 0) {
+             calculatedLateFee += monthDue * (settings.lateFine.rate / 100) * multiplier;
+           }
+        }
       }
+
+      let loanPrincipal = runningLoanBal;
+      let loanInterest = runningInterestDue;
+
+      const sumRD = paidInstallments.reduce((sum, i) => sum + (i.amountPaid || 0), 0);
+      const sumLateFeePaid = paidInstallments.reduce((sum, i) => sum + (i.lateFeePaid || 0), 0);
+      const sumInterestPaid = repayments.reduce((s, r) => s + (r.interestPaid || 0), 0);
+      const sumPrincipalPaid = repayments.reduce((s, r) => s + (r.principalPaid || 0), 0);
+      const sumLoanDisbursed = allLoans.reduce((s, l) => s + l.principalAmount, 0);
+
+      const totalEarningsReceived = sumInterestPaid + sumLateFeePaid;
+      let netProfitLossValue = 0;
+
+      const isSettlementMode = member.status === 'CLOSED' || member.status === 'MATURED';
+      if (isSettlementMode) {
+        const totalCashReceived = sumRD + sumPrincipalPaid + totalEarningsReceived;
+        let settlementPaid = member.settlementAmountPaid || 0;
+        // Approximation: assume settlement amount was out-flow normally
+        const totalCashGiven = sumLoanDisbursed + settlementPaid;
+        netProfitLossValue = totalCashReceived - totalCashGiven;
+      } else {
+        const rdCalc = calculateRdInterest(paidInstallments, member.tenureMonths, member.monthlyContribution, member.expectedMaturityAmount, monthsElapsed);
+        netProfitLossValue = totalEarningsReceived - Math.round(rdCalc.totalInterest);
+      }
+
+      const totalAmountToPay = rdDueAmount + loanInterest + calculatedLateFee;
       
       return {
         ...member,
@@ -179,7 +288,11 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
         isCompleted,
         rdDueAmount,
         loanPrincipal,
-        loanInterest
+        loanInterest,
+        calculatedLateFee,
+        totalAmountToPay,
+        netProfitLossValue,
+        totalSaved
       };
     });
   }, [members]);
@@ -672,8 +785,8 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
               <th style={{ cursor: 'pointer' }} onClick={() => requestSort('startDate')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>{t('joinDate')} {getSortIcon('startDate')}</div>
               </th>
-              <th style={{ cursor: 'pointer' }} onClick={() => requestSort('monthlyContribution')}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>{t('saving')} {getSortIcon('monthlyContribution')}</div>
+              <th style={{ cursor: 'pointer' }} onClick={() => requestSort('totalSaved')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>{t('savedSoFar')} {getSortIcon('totalSaved')}</div>
               </th>
               <th style={{ cursor: 'pointer' }} onClick={() => requestSort('pendingMonths')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>{t('rdStatus')} {getSortIcon('pendingMonths')}</div>
@@ -687,12 +800,21 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
               <th style={{ cursor: 'pointer' }} onClick={() => requestSort('loanInterest')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>{t('dueInterest')} {getSortIcon('loanInterest')}</div>
               </th>
+              <th style={{ cursor: 'pointer' }} onClick={() => requestSort('calculatedLateFee')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>{t('lblLateFee')} {getSortIcon('calculatedLateFee')}</div>
+              </th>
+              <th style={{ cursor: 'pointer' }} onClick={() => requestSort('totalAmountToPay')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>{t('totalAmountToPay')} {getSortIcon('totalAmountToPay')}</div>
+              </th>
+              <th style={{ cursor: 'pointer' }} onClick={() => requestSort('netProfitLossValue')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>{t('netProfit')} {getSortIcon('netProfitLossValue')}</div>
+              </th>
             </tr>
           </thead>
           <tbody>
             {sortedAndFiltered.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                <td colSpan={11} style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
                   No members found.
                 </td>
               </tr>
@@ -721,7 +843,10 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                       </div>
                     </td>
                     <td>
-                      <span style={{ fontSize: '13px', color: 'var(--success)', fontWeight: 600 }}>₹{formatCurrency(member.monthlyContribution)}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontSize: '13px', color: 'var(--success)', fontWeight: 600 }}>₹{formatCurrency(member.totalSaved)}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>₹{formatCurrency(member.monthlyContribution)} / {t('month').toLowerCase()}</span>
+                      </div>
                     </td>
                     <td>
                       {member.isCompleted ? (
@@ -751,6 +876,24 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                         ) : (
                            <span style={{ color: 'var(--text-muted)' }}>--</span>
                         )}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        {member.calculatedLateFee > 0 ? (
+                           <span style={{ color: 'var(--danger)', fontWeight: 600, fontSize: '13px' }}>₹{formatCurrency(member.calculatedLateFee)}</span>
+                        ) : (
+                           <span style={{ color: 'var(--text-muted)' }}>--</span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        {member.totalAmountToPay > 0 ? (
+                           <span style={{ color: 'var(--danger)', fontWeight: 700, fontSize: '14px' }}>₹{formatCurrency(member.totalAmountToPay)}</span>
+                        ) : (
+                           <span style={{ color: 'var(--text-muted)' }}>--</span>
+                        )}
                         {member.pendingMonths > 0 && !member.isCompleted && (
                           <button
                             onClick={(e) => handleWhatsAppClick(e, member)}
@@ -774,6 +917,11 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                           </button>
                         )}
                       </div>
+                    </td>
+                    <td>
+                      <span style={{ color: member.netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 700, fontSize: '13px' }}>
+                        {member.netProfitLossValue < 0 ? '-' : '+'}₹{formatCurrency(Math.abs(member.netProfitLossValue))}
+                      </span>
                     </td>
                   </tr>
                 )

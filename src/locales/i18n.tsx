@@ -157,11 +157,33 @@ export const translations: Translations = {
   closeAccount: { en: 'Close Account', te: 'ఖాతా ముగించు' },
   prematureClose: { en: 'Close Account Prematurely', te: 'మధ్యాంతరంగా క్లోజ్ చేయుటకు' },
   finalSettlement: { en: 'Final Settlement', te: 'ఫైనల్ సెటిల్మెంట్' },
-  totalAmountToPayMember: { en: 'Total to Pay Member (Savings + Bonus)', te: 'సభ్యునికి ఇవ్వవలసినది (సేవింగ్స్ + బోనస్)' },
-  totalDeductions: { en: 'Total Deductions (Loan + Interest)', te: 'కట్ అయ్యే మొత్తం (అప్పు + వడ్డీ)' },
+  totalAmountToPayMember: { en: 'Total to Pay Member', te: 'సభ్యునికి ఇవ్వవలసినది' },
+  totalDeductions: { en: 'Total Deductions', te: 'కట్ అయ్యే మొత్తం' },
   netSettlement: { en: 'Net Settlement Amount', te: 'ఫైనల్ అమౌంట్' },
   wePay: { en: 'We have to pay this amount to the member', te: 'మనం సభ్యునికి ఇవ్వవలసిన మొత్తం' },
   memberPays: { en: 'Member has to pay this amount to us', te: 'సభ్యుడు మనకు కట్టాల్సిన మొత్తం' },
+  lblSavings: { en: 'Savings', te: 'సేవింగ్స్' },
+  lblBonus: { en: 'Bonus', te: 'బోనస్' },
+  lblLoan: { en: 'Loan', te: 'అప్పు' },
+  lblInterest: { en: 'Interest', te: 'వడ్డీ' },
+  lblLateFee: { en: 'Late Fee', te: 'ఆలస్య రుసుము' },
+  
+  // Settlement Payment Details
+  settlementPaymentDetails: { en: 'Settlement Payment Details', te: 'సెటిల్మెంట్ చెల్లింపు వివరాలు' },
+  amountPaidToMember: { en: 'Amount Paid to Member', te: 'సభ్యునికి ఇచ్చిన మొత్తం' },
+  amountPaidToUs: { en: 'Amount Paid to Us', te: 'సభ్యుడు మనకు ఇచ్చిన మొత్తం' },
+  datePaid: { en: 'Date Paid', te: 'చెల్లించిన తేదీ' },
+
+  // Transactions / P&L Card
+  transactionsCardTitle: { en: 'Transactions (P&L)', te: 'లావాదేవీలు' },
+  transactionsCardTooltipActive: { en: 'Calculates the profit or loss from this member. Earnings = Loan Interest Paid + Late Fees Paid. Loss/Bonus = RD Bonus Given. Profit = Earnings - Bonus.', te: 'ఈ సభ్యునిపై లాభనష్టాల అంచనా. మనకు వచ్చిన ఆదాయం (వడ్డీ + లేట్ ఫైన్) మరియు మనం ఇచ్చిన బోనస్ మధ్య వ్యత్యాసం నికర లాభం/నష్టం.' },
+  transactionsCardTooltipSettled: { en: 'Calculates final profit or loss using Cash Flow. Total Cash Received (RD+Repayments) minus Total Cash Given (Loans+Settlement).', te: 'క్యాష్ ఫ్లో ఆధారంగా నికర లాభనష్టాల అంచనా. సంస్థకు వచ్చిన మొత్తం డబ్బు (పొదుపు+అప్పు జమ) నుండి సంస్థ ఇచ్చిన మొత్తం డబ్బు (అప్పు+సెటిల్మెంట్) తీసివేస్తే వచ్చేదే నికర లాభం.' },
+  totalEarningsReceived: { en: 'Total Earnings (Int + Late Fee)', te: 'వచ్చిన ఆదాయం (వడ్డీ + రుసుము)' },
+  bonusGiven: { en: 'RD Bonus Accrued', te: 'ఇవ్వాల్సిన బోనస్' },
+  totalCashReceivedPL: { en: 'Total Cash Received', te: 'వచ్చిన మొత్తం క్యాష్' },
+  totalCashGivenPL: { en: 'Total Cash Given', te: 'ఇచ్చిన మొత్తం క్యాష్' },
+  netProfit: { en: 'Net Profit', te: 'నికర లాభం' },
+  netLoss: { en: 'Net Loss', te: 'నికర నష్టం' },
   
   // RD Interest Calc Modal
   rdInterestCalc: { en: 'RD Interest Calculation', te: 'ఆర్డీ వడ్డీ లెక్కింపు' },
@@ -249,7 +271,8 @@ export const translations: Translations = {
   pendingDash: { en: 'Pending', te: 'పెండింగ్లో' },
   noMembersYet: { en: 'No members registered yet', te: 'ఇంకా సభ్యులు నమోదు కాలేదు' },
   noTransactionsYet: { en: 'No transactions yet', te: 'ఇంకా లావాదేవీలు లేవు' },
-  noPendingMembersText: { en: 'No pending members', te: 'పెండింగ్ సభ్యులు లేరు' }
+  noPendingMembersText: { en: 'No pending members', te: 'పెండింగ్ సభ్యులు లేరు' },
+  zoomLabel: { en: 'Screen Zoom', te: 'స్క్రీన్ జూమ్' }
 };
 
 interface I18nContextType {
