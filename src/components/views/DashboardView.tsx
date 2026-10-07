@@ -162,11 +162,11 @@ export const DashboardView = () => {
             
             const chartData = data.chartData.map((v: any) => ({
               month: v.name,
-              rd: v.CashIn,
+              rd: v.rd ?? v.CashIn,
               loanGiven: v.CashOut,
-              intCollected: 0,
-              lateFee: 0,
-              loanRepaid: 0,
+              intCollected: v.intCollected ?? 0,
+              lateFee: v.lateFee ?? 0,
+              loanRepaid: v.loanRepaid ?? 0,
               netCashFlow: v.CashIn - v.CashOut
             }));
             
@@ -419,6 +419,12 @@ export const DashboardView = () => {
                 <span style={{ color: '#15803d', display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalLoansGivenCash')} <InfoIcon tooltip={getT(lang, 'ttLoanGiven')} /></span>
                 <span style={{ fontWeight: 600, color: '#dc2626' }}>- ₹{formatCurrency(stats.totalLoanGiven)}</span>
               </div>
+              {stats.totalSettlementPaid > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
+                  <span style={{ color: '#15803d', display: 'flex', alignItems: 'center' }}>{lang === 'te' ? 'సభ్యులకు ఇచ్చిన సెటిల్మెంట్లు' : 'Settlements Paid'}</span>
+                  <span style={{ fontWeight: 600, color: '#dc2626' }}>- ₹{formatCurrency(stats.totalSettlementPaid)}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(15px * var(--text-scale, 1))`, borderTop: '1px dashed #86efac', paddingTop: '8px', marginTop: '4px' }}>
                 <span style={{ color: '#14532d', fontWeight: 700, display: 'flex', alignItems: 'center' }}>{getT(lang, 'cashInHand')} <InfoIcon tooltip={getT(lang, 'ttCashInHand')} /></span>
                 <span style={{ fontWeight: 800, color: '#16a34a', fontSize: `calc(22px * var(--text-scale, 1))` }}>

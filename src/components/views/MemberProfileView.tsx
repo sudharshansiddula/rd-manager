@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ArrowLeft, Save, Edit2, Trash2, Phone, MapPin, PiggyBank, Wallet, AlertCircle, Info, X } from 'lucide-react';
+import { ArrowLeft, Save, Edit2, Trash2, Phone, MapPin, PiggyBank, Wallet, AlertCircle, Info, X, FileText, Share2, Download, MessageSquare, Loader2 } from 'lucide-react';
 import { useI18n } from '../../locales/i18n';
-import { formatCurrency } from '../../utils';
+import { formatCurrency, buildWhatsAppMessage } from '../../utils';
 import { StorageService, storageEvents } from '../../engine/storage';
 import { WhatsAppIcon } from '../WhatsAppIcon';
+import { downloadMemberStatementPdf, shareMemberStatementPdf, shareMemberStatementPdfToWhatsApp, type MemberStatementData } from '../../utils/memberStatementPdf';
 import type { Member, RDInstallment, Loan, LoanRepayment } from '../../types';
 
 interface MemberProfileProps {
@@ -552,16 +553,158 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
   const maxMonthDate = new Date(minMonthDate.getFullYear(), minMonthDate.getMonth() + member.tenureMonths - 1, 1);
   const maxMonth = `${maxMonthDate.getFullYear()}-${String(maxMonthDate.getMonth() + 1).padStart(2, '0')}`;
 
-  const whatsappMsgRaw = settings?.whatsappTemplate || t('whatsappDueMessage');
-  const whatsappMsg = whatsappMsgRaw
-    .replace('{name}', member.name)
-    .replace('{totalDue}', totalAmountDueThisMonth.toString())
-    .replace('{rdDue}', pendingRDAmount.toString())
-    .replace('{loanPrincipal}', currentLoanBal.toString())
-    .replace('{loanInterestDue}', remainingInterestDue.toString())
-    .replace('{lateFee}', calculatedLateFee.toString());
+  const loanInterestRate = settings?.loanInterestRate ?? 2;
+  const totalLoanTaken = loans.reduce((s, l) => s + l.principalAmount, 0);
+  const monthlyInt = currentLoanBal > 0 ? Math.round((currentLoanBal * loanInterestRate) / 100) : 0;
+  const pendingLoanMonths = monthlyInt > 0 ? Math.max(1, Math.round(remainingInterestDue / monthlyInt)) : (remainingInterestDue > 0 ? 1 : 0);
+
+  const whatsappMsg = buildWhatsAppMessage(settings?.whatsappTemplate || t('whatsappDueMessage'), {
+    name: member.name,
+    totalDue: totalAmountDueThisMonth,
+    rdDue: pendingRDAmount,
+    monthlyContribution: member.monthlyContribution,
+    pendingRDMonths,
+    loanPrincipal: currentLoanBal,
+    totalLoanTaken,
+    loanDisbursementDate: loans[0]?.disbursementDate,
+    loanInterestRate,
+    pendingLoanMonths,
+    loanInterestDue: remainingInterestDue,
+    lateFee: Math.round(calculatedLateFee),
+    lateFineRate: settings.lateFine?.rate ?? 2,
+    lateFineMultiplier: lateFeeBreakdown.length > 0 ? lateFeeBreakdown.length : (Math.round(calculatedLateFee) > 0 ? (pendingRDMonths > 0 ? pendingRDMonths : 1) : 0)
+  });
+
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isSharingPdf, setIsSharingPdf] = useState(false);
+  const [isWhatsAppPdfSharing, setIsWhatsAppPdfSharing] = useState(false);
 
   const whatsappUrl = `https://wa.me/91${member.mobile}?text=${encodeURIComponent(whatsappMsg)}`;
+
+  const getStatementData = (): MemberStatementData => {
+    const sumLoanDisbursed = rows.reduce((sum, r) => sum + (r.loanDisbursed || 0), 0);
+    const sumPrincipalPaid = rows.reduce((sum, r) => sum + (r.principalPaid || 0), 0);
+    const sumInterestPaid = rows.reduce((sum, r) => sum + (r.interestPaid || 0), 0);
+    const sumLateFee = rows.reduce((sum, r) => sum + (r.lateFee || 0), 0);
+    const sumTotalPaid = rows.reduce((sum, r) => sum + (r.totalPaid || 0), 0);
+    const remainingMonths = Math.max(0, member.tenureMonths - paidMonthsCount);
+    const lateFineMonthsCount = lateFeeBreakdown.length > 0 
+      ? lateFeeBreakdown.length 
+      : (Math.round(calculatedLateFee) > 0 ? (pendingRDMonths > 0 ? pendingRDMonths : 1) : 0);
+
+    return {
+      member: {
+        id: member.id,
+        name: member.name,
+        mobile: member.mobile,
+        address: member.address,
+        startDate: member.startDate,
+        tenureMonths: member.tenureMonths,
+        monthlyContribution: member.monthlyContribution,
+        expectedMaturityAmount: member.expectedMaturityAmount
+      },
+      currentDues: {
+        pendingRDAmount,
+        pendingRDMonths,
+        monthlyContribution: member.monthlyContribution,
+        remainingInterestDue,
+        pendingLoanMonths,
+        loanInterestRate,
+        calculatedLateFee: Math.round(calculatedLateFee),
+        lateFineRate: settings.lateFine?.rate ?? 2,
+        lateFineMonths: lateFineMonthsCount,
+        totalAmountDueThisMonth,
+        currentLoanBal
+      },
+      summary: {
+        paidMonthsCount,
+        remainingMonths,
+        totalSaved,
+        totalLoanTaken: sumLoanDisbursed,
+        totalPrincipalRepaid: sumPrincipalPaid,
+        currentLoanBal,
+        totalInterestPaid: sumInterestPaid,
+        totalLateFeePaid: sumLateFee,
+        grandTotalPaid: sumTotalPaid,
+        expectedMaturityAmount: member.expectedMaturityAmount || (member.tenureMonths * member.monthlyContribution)
+      },
+      rows: rows.map(r => ({
+        monthIndex: r.monthIndex,
+        monthStr: r.monthStr,
+        rdAmount: r.rdAmount,
+        depositorDetails: r.depositorDetails,
+        loanDisbursed: r.loanDisbursed,
+        principalPaid: r.principalPaid,
+        interestPaid: r.interestPaid,
+        lateFee: r.lateFee,
+        totalPaid: r.totalPaid,
+        loanBalAfter: r.loanBalAfter,
+        updatedAt: r.updatedAt ? Number(r.updatedAt) : undefined
+      })),
+      totals: {
+        sumRD: totalSaved,
+        sumLoanDisbursed,
+        sumPrincipalPaid,
+        sumInterestPaid,
+        sumLateFee,
+        sumTotalPaid
+      },
+      lang: lang as 'te' | 'en'
+    };
+  };
+
+  const handleDownloadPdf = async () => {
+    try {
+      setIsGeneratingPdf(true);
+      const data = getStatementData();
+      await downloadMemberStatementPdf(data);
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+      alert(lang === 'te' ? 'PDF తయారీలో లోపం ఏర్పడింది.' : 'Failed to generate PDF.');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  const handleSharePdf = async () => {
+    try {
+      setIsSharingPdf(true);
+      const data = getStatementData();
+      const res = await shareMemberStatementPdf(data);
+      if (res.method === 'download-fallback') {
+        alert(lang === 'te' 
+          ? 'కంప్యూటర్‌లో ఫైల్ డౌన్‌లోడ్ చేయబడింది. మీరు దీనిని వాట్సాప్ లేదా ఇతర యాప్స్‌లో షేర్ చేయవచ్చు.' 
+          : 'PDF file downloaded. You can attach and share it.');
+      }
+    } catch (err) {
+      console.error('Failed to share PDF:', err);
+      alert(lang === 'te' ? 'షేర్ చేయడంలో లోపం ఏర్పడింది.' : 'Failed to share PDF.');
+    } finally {
+      setIsSharingPdf(false);
+    }
+  };
+
+  const handleWhatsAppPdf = async () => {
+    if (!member.mobile) {
+      alert(lang === 'te' ? 'సభ్యుని మొబైల్ నంబర్ అందుబాటులో లేదు.' : 'Member mobile number is not available.');
+      return;
+    }
+    try {
+      setIsWhatsAppPdfSharing(true);
+      const data = getStatementData();
+      const res = await shareMemberStatementPdfToWhatsApp(data, member.mobile, whatsappMsg);
+      if (res.method === 'whatsapp-web-fallback') {
+        alert(lang === 'te'
+          ? `PDF కంప్యూటర్‌లో డౌన్‌లోడ్ చేయబడింది మరియు వాట్సాప్ చాట్ ఓపెన్ చేయబడింది. దయచేసి డౌన్‌లోడ్ అయిన PDFని వాట్సాప్‌లో అటాచ్ చేసి పంపండి.`
+          : `PDF downloaded and WhatsApp chat opened. Please attach the downloaded PDF and send.`);
+      }
+    } catch (err) {
+      console.error('Failed to share PDF via WhatsApp:', err);
+      alert(lang === 'te' ? 'వాట్సాప్‌లో షేర్ చేయడంలో లోపం ఏర్పడింది.' : 'Failed to share via WhatsApp.');
+    } finally {
+      setIsWhatsAppPdfSharing(false);
+    }
+  };
 
   const getPendingRDAmtForMonth = (targetMonthIndex: number, isEditing: boolean, editingRdAmount: number) => {
     let pending = 0;
@@ -643,15 +786,184 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                     <Phone size={14} color="var(--text-muted)" />
                   )}
                   {member.mobile || 'N/A'}
-                  {member.mobile && (
-                    <a href={whatsappUrl} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', color: '#25D366', marginLeft: '4px' }} title="Send Dues via WhatsApp">
-                      <WhatsAppIcon size={16} />
-                    </a>
-                  )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)' }}>
                   <MapPin size={14} />
                   {member.address || 'No Address Provided'}
+                </div>
+
+                {/* Right Action Bars (SMS & PDF) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto', flexWrap: 'wrap' }}>
+                  {/* 2-Compartment WhatsApp SMS Action Bar */}
+                  {member.mobile && (
+                    <div style={{ display: 'inline-flex', alignItems: 'stretch', borderRadius: '8px', border: '1.5px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', backgroundColor: '#ffffff', height: '34px' }}>
+                      {/* Compartment 1: SMS Badge (Display Only) */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '0 9px',
+                          backgroundColor: '#e0f2fe',
+                          color: '#0369a1',
+                          fontWeight: 800,
+                          fontSize: `calc(12px * var(--text-scale, 1))`,
+                          borderRight: '1.5px solid #bae6fd',
+                          letterSpacing: '0.4px',
+                          userSelect: 'none'
+                        }}
+                        title={lang === 'te' ? 'బకాయిల వివరాల SMS' : 'Dues SMS Message'}
+                      >
+                        <MessageSquare size={14} strokeWidth={2.5} />
+                        <span>SMS</span>
+                      </div>
+
+                      {/* Compartment 2: WhatsApp Icon & 'మెసేజ్' Button */}
+                      <a
+                        href={whatsappUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '0 11px',
+                          backgroundColor: '#f0fdf4',
+                          color: '#15803d',
+                          fontSize: `calc(12px * var(--text-scale, 1))`,
+                          fontWeight: 600,
+                          textDecoration: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                          outline: 'none'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#dcfce7'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0fdf4'; }}
+                        title={lang === 'te' ? 'సభ్యునికి ప్రస్తుత బకాయిల వివరాలు వాట్సాప్ మెసేజ్ ద్వారా పంపండి' : 'Send Dues Message via WhatsApp'}
+                      >
+                        <WhatsAppIcon size={15} />
+                        <span>{lang === 'te' ? 'మెసేజ్' : 'Message'}</span>
+                      </a>
+                    </div>
+                  )}
+
+                  {/* 4-Compartment PDF Statement Action Bar */}
+                  <div style={{ display: 'inline-flex', alignItems: 'stretch', borderRadius: '8px', border: '1.5px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', backgroundColor: '#ffffff', height: '34px' }}>
+                    <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+                    
+                    {/* Compartment 1: PDF Logo & Label (Icon Display Only) */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '0 10px',
+                        backgroundColor: '#fee2e2',
+                        color: '#b91c1c',
+                        fontWeight: 800,
+                        fontSize: `calc(12px * var(--text-scale, 1))`,
+                        borderRight: '1.5px solid #fca5a5',
+                        letterSpacing: '0.4px',
+                        userSelect: 'none'
+                      }}
+                      title={lang === 'te' ? 'ఖాతా స్టేట్‌మెంట్ PDF' : 'Account Statement PDF'}
+                    >
+                      <FileText size={15} strokeWidth={2.5} />
+                      <span>PDF</span>
+                    </div>
+
+                    {/* Compartment 2: WhatsApp Share Button (Sends PDF to Member's Mobile) */}
+                    <button
+                      onClick={handleWhatsAppPdf}
+                      disabled={isGeneratingPdf || isSharingPdf || isWhatsAppPdfSharing}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '0 11px',
+                        backgroundColor: '#f0fdf4',
+                        color: '#15803d',
+                        border: 'none',
+                        borderRight: '1.5px solid #bbf7d0',
+                        fontSize: `calc(12px * var(--text-scale, 1))`,
+                        fontWeight: 600,
+                        cursor: (isGeneratingPdf || isSharingPdf || isWhatsAppPdfSharing) ? 'wait' : 'pointer',
+                        transition: 'all 0.15s',
+                        outline: 'none'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#dcfce7'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0fdf4'; }}
+                      title={lang === 'te' ? 'సభ్యుని మొబైల్ నంబర్‌కు PDF స్టేట్‌మెంట్ వాట్సాప్‌లో షేర్ చేయండి' : 'Share PDF statement with member on WhatsApp'}
+                    >
+                      {isWhatsAppPdfSharing ? (
+                        <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                      ) : (
+                        <WhatsAppIcon size={15} />
+                      )}
+                      <span>{isWhatsAppPdfSharing ? (lang === 'te' ? 'పంపుతోంది...' : 'Sending...') : 'PDF'}</span>
+                    </button>
+
+                    {/* Compartment 3: General Share Button (Web Share API) */}
+                    <button
+                      onClick={handleSharePdf}
+                      disabled={isGeneratingPdf || isSharingPdf || isWhatsAppPdfSharing}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '0 11px',
+                        backgroundColor: '#e0e7ff',
+                        color: '#4338ca',
+                        border: 'none',
+                        borderRight: '1.5px solid #c7d2fe',
+                        fontSize: `calc(12px * var(--text-scale, 1))`,
+                        fontWeight: 600,
+                        cursor: (isGeneratingPdf || isSharingPdf || isWhatsAppPdfSharing) ? 'wait' : 'pointer',
+                        transition: 'all 0.15s',
+                        outline: 'none'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#c7d2fe'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#e0e7ff'; }}
+                      title={lang === 'te' ? 'PDF స్టేట్‌మెంట్‌ను ఎవరికైనా షేర్ చేయండి' : 'Share PDF statement'}
+                    >
+                      {isSharingPdf ? (
+                        <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                      ) : (
+                        <Share2 size={14} />
+                      )}
+                      <span>{isSharingPdf ? (lang === 'te' ? 'షేర్ అవుతోంది...' : 'Sharing...') : (lang === 'te' ? 'షేర్' : 'Share')}</span>
+                    </button>
+
+                    {/* Compartment 4: Download Button (Saves PDF to computer) */}
+                    <button
+                      onClick={handleDownloadPdf}
+                      disabled={isGeneratingPdf || isSharingPdf || isWhatsAppPdfSharing}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '0 13px',
+                        backgroundColor: '#f8fafc',
+                        color: '#0f172a',
+                        border: 'none',
+                        fontSize: `calc(12px * var(--text-scale, 1))`,
+                        fontWeight: 600,
+                        cursor: (isGeneratingPdf || isSharingPdf || isWhatsAppPdfSharing) ? 'wait' : 'pointer',
+                        transition: 'all 0.15s',
+                        outline: 'none'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#e2e8f0'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f8fafc'; }}
+                      title={lang === 'te' ? 'కంప్యూటర్‌లో PDF ఫైల్‌ను డౌన్‌లోడ్ చేసి సేవ్ చేయండి' : 'Download and save PDF to device'}
+                    >
+                      {isGeneratingPdf ? (
+                        <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                      ) : (
+                        <Download size={14} />
+                      )}
+                      <span>{isGeneratingPdf ? (lang === 'te' ? 'డౌన్‌లోడ్...' : 'Downloading...') : (lang === 'te' ? 'డౌన్‌లోడ్' : 'Download')}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -25,6 +25,7 @@ function App() {
   const [activeView, setActiveView] = useState<string>(() => {
     return StorageService.getSettings().defaultView || 'dashboard';
   });
+  const hasUserInteractedView = React.useRef(false);
   const { t, lang, setLang } = useI18n();
 
   const [user, setUser] = useState<User | null>(null);
@@ -40,6 +41,11 @@ function App() {
       const dbSettings = StorageService.getSettings();
       setZoomLevel(dbSettings.zoomLevel || 100);
       setTextSize(dbSettings.textSize || 100);
+
+      // On initial app open / refresh, ensure default screen opens if user has not manually switched
+      if (!hasUserInteractedView.current && dbSettings.defaultView) {
+        setActiveView(dbSettings.defaultView);
+      }
     };
     storageEvents.addEventListener('db_updated', handleDbUpdate);
     handleDbUpdate();
@@ -78,6 +84,7 @@ function App() {
     });
 
     const handleNav = (e: any) => {
+      hasUserInteractedView.current = true;
       if (e.detail.view) setActiveView(e.detail.view);
       setNavParams(e.detail);
     };
@@ -205,28 +212,28 @@ function App() {
         <nav className="sidebar-nav">
           <button 
             className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`}
-            onClick={() => { setActiveView('dashboard'); setIsSidebarOpen(false); }}
+            onClick={() => { hasUserInteractedView.current = true; setActiveView('dashboard'); setIsSidebarOpen(false); }}
           >
             <LayoutDashboard size={20} />
             <span>{t('dashboard')}</span>
           </button>
           <button 
             className={`nav-item ${activeView === 'members' ? 'active' : ''}`}
-            onClick={() => { setActiveView('members'); setIsSidebarOpen(false); }}
+            onClick={() => { hasUserInteractedView.current = true; setActiveView('members'); setIsSidebarOpen(false); }}
           >
             <Users size={20} />
             <span>{t('members')}</span>
           </button>
           <button 
             className={`nav-item ${activeView === 'transactions' ? 'active' : ''}`}
-            onClick={() => { setActiveView('transactions'); setIsSidebarOpen(false); }}
+            onClick={() => { hasUserInteractedView.current = true; setActiveView('transactions'); setIsSidebarOpen(false); }}
           >
             <History size={20} />
             <span>{t('transactions')}</span>
           </button>
           <button 
             className={`nav-item ${activeView === 'settings' ? 'active' : ''}`}
-            onClick={() => { setActiveView('settings'); setIsSidebarOpen(false); }}
+            onClick={() => { hasUserInteractedView.current = true; setActiveView('settings'); setIsSidebarOpen(false); }}
           >
             <Settings size={20} />
             <span>{t('settings')}</span>

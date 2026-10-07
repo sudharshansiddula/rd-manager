@@ -1,7 +1,8 @@
-// Storage Service for App - Migrated to Firestore (Fully removed localStorage)
+// Storage Service for App - Hybrid Architecture with Instant Local Cache & Firestore Cloud Sync
 import type { Member, RDInstallment, Loan, LoanRepayment, Transaction, AppSettings } from '../types';
 import { db as firestoreDb } from '../firebase';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { DEFAULT_WHATSAPP_TEMPLATE_TE } from '../utils';
 
 interface DatabaseSchema {
   members: Member[];
@@ -21,63 +22,122 @@ const defaultDb: DatabaseSchema = {
   settings: {
     defaultView: 'dashboard',
     lateFine: { period: 'MONTHLY', dueDate: 10, rate: 2 },
-    whatsappTemplate: "నమస్కారం {name} గారు,\n\nఈ నెలకు సంబంధించిన మీ పెండింగ్ బకాయిల వివరాలు:\n\n*మొత్తం కట్టాల్సినది: ₹{totalDue}*\n\nవివరాలు:\n- RD పొదుపు బకాయి: ₹{rdDue}\n- అప్పు వడ్డీ బకాయి: ₹{loanInterestDue}\n- పెనాల్టీ / లేట్ ఫైన్: ₹{lateFee}\n\n(అప్పు అసలు బ్యాలెన్స్: ₹{loanPrincipal})\n\nదయచేసి వీలైనంత త్వరగా చెల్లించగలరు.\nధన్యవాదాలు.",
+    whatsappTemplate: DEFAULT_WHATSAPP_TEMPLATE_TE,
     loanInterestRate: 2,
     zoomLevel: 100,
     textSize: 100
   }
 };
 
-let memoryDb: DatabaseSchema = { ...defaultDb };
+const LOCAL_CACHE_KEY = 'rd_manager_db_cache';
+
+function loadCachedDb(): DatabaseSchema {
+  try {
+    const cached = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_CACHE_KEY) : null;
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return {
+        ...defaultDb,
+        ...parsed,
+        settings: {
+          ...defaultDb.settings,
+          ...(parsed.settings || {}),
+          lateFine: {
+            ...defaultDb.settings.lateFine,
+            ...(parsed.settings?.lateFine || {})
+          }
+        }
+      };
+    }
+  } catch (e) {
+    console.warn("Failed to parse local storage cache:", e);
+  }
+  return { ...defaultDb };
+}
+
+let memoryDb: DatabaseSchema = loadCachedDb();
 let isInitialized = false;
 let isLoadedFromServer = false;
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
-
 let currentUserId: string | null = null;
 let unsubscribeSnapshot: (() => void) | null = null;
 
 // Simple event target to notify the app when storage changes
 export const storageEvents = new EventTarget();
 
+const flushToFirestore = async () => {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+    saveTimeout = null;
+  }
+  if (!currentUserId) return;
+  try {
+    const docRef = doc(firestoreDb, 'rd_manager_users', currentUserId);
+    await setDoc(docRef, memoryDb);
+    console.log("Firestore successfully synced.");
+  } catch (err) {
+    console.error("Firestore immediate save error:", err);
+  }
+};
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    flushToFirestore();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      flushToFirestore();
+    }
+  });
+}
+
 export const StorageService = {
-  // Initialize and subscribe to Firestore updates (replaces localStorage entirely)
+  // Initialize and subscribe to Firestore updates
   initSync(userId: string) {
     if (isInitialized && currentUserId === userId) return;
 
-    // Clear previous sync if switching users
     if (unsubscribeSnapshot) {
       unsubscribeSnapshot();
     }
 
     currentUserId = userId;
     isInitialized = true;
-    isLoadedFromServer = false;
-    memoryDb = { ...defaultDb };
     console.log(`Initializing Firestore sync for user ${userId}...`);
 
     try {
       const docRef = doc(firestoreDb, 'rd_manager_users', userId);
 
-      // onSnapshot automatically uses offline persistence cache and keeps UI perfectly synced
       unsubscribeSnapshot = onSnapshot(docRef, (docSnap: any) => {
-        console.log("SNAPSHOT FIRED:", { exists: docSnap.exists(), fromCache: docSnap.metadata.fromCache });
+        console.log("SNAPSHOT FIRED:", { exists: docSnap.exists(), fromCache: docSnap.metadata?.fromCache });
 
         if (docSnap.exists()) {
           const remoteDb = docSnap.data() as DatabaseSchema;
-          memoryDb = { ...defaultDb, ...remoteDb };
+          memoryDb = {
+            ...defaultDb,
+            ...remoteDb,
+            settings: {
+              ...defaultDb.settings,
+              ...(remoteDb.settings || {}),
+              lateFine: {
+                ...defaultDb.settings.lateFine,
+                ...(remoteDb.settings?.lateFine || {})
+              }
+            }
+          };
           isLoadedFromServer = true;
+          try {
+            localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(memoryDb));
+          } catch (e) {}
           storageEvents.dispatchEvent(new Event('db_updated'));
         } else {
-          if (docSnap.metadata.fromCache) {
+          if (docSnap.metadata?.fromCache) {
             console.log('Cache is empty. Waiting for server fetch...');
             return;
           }
 
-          console.log('No data found on server. Initializing with default data...');
+          console.log('No data found on server. Initializing with local/default data...');
           isLoadedFromServer = true;
-          if (!docSnap.metadata.fromCache) {
-            setDoc(docRef, defaultDb).catch(err => console.error("Initial Firestore save error:", err));
-          }
+          setDoc(docRef, memoryDb).catch(err => console.error("Initial Firestore save error:", err));
           storageEvents.dispatchEvent(new Event('db_updated'));
         }
       }, (error) => {
@@ -93,58 +153,72 @@ export const StorageService = {
     currentUserId = null;
     isInitialized = false;
     isLoadedFromServer = false;
-    memoryDb = { ...defaultDb };
+    memoryDb = loadCachedDb();
   },
 
   getDb(): DatabaseSchema {
     return memoryDb;
   },
 
-  saveDb(db: DatabaseSchema) {
+  saveDb(db: DatabaseSchema, immediate = false) {
     memoryDb = db; // Optimistic update
+
+    // Synchronously write to local cache immediately so no data is ever lost across reload
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(memoryDb));
+      }
+    } catch (e) {
+      console.warn("LocalStorage save error:", e);
+    }
 
     // Fire event for UI update
     storageEvents.dispatchEvent(new Event('db_updated'));
 
-    // Prevent overwriting the database before we have fetched it!
-    if (!isLoadedFromServer || !currentUserId) {
-      console.warn("Attempted to save DB before initial load from Firestore or missing user. Skipping to prevent data loss.");
+    if (!currentUserId) {
+      console.warn("User not logged in yet. Saved to local cache only.");
       return;
     }
 
     if (saveTimeout) {
       clearTimeout(saveTimeout);
+      saveTimeout = null;
     }
 
-    saveTimeout = setTimeout(() => {
-      try {
-        const docRef = doc(firestoreDb, 'rd_manager_users', currentUserId!);
-        setDoc(docRef, memoryDb).catch(err => console.error("Firestore save error:", err));
-      } catch (err) {
-        console.error("Firestore save error:", err);
-      }
-    }, 800); // 800ms debounce
+    if (immediate) {
+      flushToFirestore();
+    } else {
+      saveTimeout = setTimeout(() => {
+        flushToFirestore();
+      }, 500); // 500ms debounce for high responsiveness
+    }
   },
 
   getSettings(): AppSettings {
     const db = this.getDb();
 
+    let currentTemplate = db.settings?.whatsappTemplate ?? defaultDb.settings.whatsappTemplate;
+    if (currentTemplate && (currentTemplate.includes('{rdCalc}') || currentTemplate.includes('• ఆర్డి పొదుపు బకాయిలు') || currentTemplate.includes('• RD Savings Due') || currentTemplate.includes('📋') || currentTemplate.includes('🔹') || currentTemplate.includes('\uFFFD'))) {
+      currentTemplate = DEFAULT_WHATSAPP_TEMPLATE_TE;
+    }
+
     const mergedSettings: AppSettings = {
       ...defaultDb.settings,
-      ...db.settings,
+      ...(db.settings || {}),
       defaultView: db.settings?.defaultView ?? defaultDb.settings.defaultView,
       lateFine: {
         ...defaultDb.settings.lateFine,
-        ...(db.settings?.lateFine || {}),
-        rate: db.settings?.lateFine?.rate ?? defaultDb.settings.lateFine.rate
+        ...(db.settings?.lateFine || {})
       },
-      whatsappTemplate: db.settings?.whatsappTemplate ?? defaultDb.settings.whatsappTemplate,
-      loanInterestRate: db.settings?.loanInterestRate ?? defaultDb.settings.loanInterestRate
+      whatsappTemplate: currentTemplate,
+      loanInterestRate: db.settings?.loanInterestRate ?? defaultDb.settings.loanInterestRate,
+      zoomLevel: db.settings?.zoomLevel ?? defaultDb.settings.zoomLevel,
+      textSize: db.settings?.textSize ?? defaultDb.settings.textSize
     };
 
     if (!db.settings || JSON.stringify(db.settings) !== JSON.stringify(mergedSettings)) {
       db.settings = mergedSettings;
-      this.saveDb(db);
+      this.saveDb(db, false);
     }
 
     return db.settings;
@@ -152,8 +226,9 @@ export const StorageService = {
 
   saveSettings(settings: AppSettings) {
     const db = this.getDb();
-    db.settings = settings;
-    this.saveDb(db);
+    db.settings = { ...settings };
+    // Settings changes are high importance - save immediately!
+    this.saveDb(db, true);
   },
 
   // ---------------- MEMBERS ----------------
@@ -180,7 +255,7 @@ export const StorageService = {
     if (db.loans) db.loans = db.loans.filter(l => l.memberId !== memberId);
     if (db.loanRepayments) db.loanRepayments = db.loanRepayments.filter(lr => lr.memberId !== memberId);
     if (db.transactions) db.transactions = db.transactions.filter(t => t.memberId !== memberId);
-    this.saveDb(db);
+    this.saveDb(db, true);
   },
 
   // ---------------- RD INSTALLMENTS ----------------

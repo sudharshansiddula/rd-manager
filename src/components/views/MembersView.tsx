@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useI18n } from '../../locales/i18n';
-import { formatCurrency } from '../../utils';
+import { formatCurrency, buildWhatsAppMessage } from '../../utils';
 import { StorageService, storageEvents } from '../../engine/storage';
 import type { Member } from '../../types';
 import { 
@@ -540,6 +540,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
         acc.totalLoansAmount += m.loanPrincipal;
       }
       acc.totalDueInterest += m.loanInterest;
+      acc.totalLateFee += (m.calculatedLateFee || 0);
       acc.totalAmountToPay += (m.totalAmountToPay || 0);
       acc.netProfitLossValue += (m.netProfitLossValue || 0);
       return acc;
@@ -550,6 +551,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       activeLoans: 0, 
       totalLoansAmount: 0, 
       totalDueInterest: 0,
+      totalLateFee: 0,
       pendingMembers: 0,
         totalAmountToPay: 0,
         netProfitLossValue: 0
@@ -695,16 +697,26 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
     const pendingRDMonths = Math.max(0, monthsElapsed - (member.maxPaidMonthIndex !== undefined ? member.maxPaidMonthIndex : member.paidMonths));
     const pendingRDAmount = pendingRDMonths * member.monthlyContribution;
 
-    const totalAmountDueThisMonth = pendingRDAmount + remainingInterestDue + calculatedLateFee;
+    const totalAmountDueThisMonth = pendingRDAmount + remainingInterestDue + Math.round(calculatedLateFee);
+    const monthlyInt = runningLoanBal > 0 ? Math.round((runningLoanBal * loanInterestRate) / 100) : 0;
+    const pendingLoanMonths = monthlyInt > 0 ? Math.max(1, Math.round(remainingInterestDue / monthlyInt)) : (remainingInterestDue > 0 ? 1 : 0);
 
-    const whatsappMsgRaw = settings?.whatsappTemplate || t('whatsappDueMessage');
-    const whatsappMsg = whatsappMsgRaw
-      .replace('{name}', member.name)
-      .replace('{totalDue}', totalAmountDueThisMonth.toString())
-      .replace('{rdDue}', pendingRDAmount.toString())
-      .replace('{loanPrincipal}', member.loanPrincipal.toString())
-      .replace('{loanInterestDue}', remainingInterestDue.toString())
-      .replace('{lateFee}', calculatedLateFee.toString());
+    const whatsappMsg = buildWhatsAppMessage(settings?.whatsappTemplate || t('whatsappDueMessage'), {
+      name: member.name,
+      totalDue: totalAmountDueThisMonth,
+      rdDue: pendingRDAmount,
+      monthlyContribution: member.monthlyContribution,
+      pendingRDMonths,
+      loanPrincipal: member.loanPrincipal,
+      totalLoanTaken: loans.reduce((s, l) => s + l.principalAmount, 0),
+      loanDisbursementDate: loans[0]?.disbursementDate,
+      loanInterestRate,
+      pendingLoanMonths,
+      loanInterestDue: remainingInterestDue,
+      lateFee: Math.round(calculatedLateFee),
+      lateFineRate: settings.lateFine?.rate ?? 2,
+      lateFineMultiplier: Math.round(calculatedLateFee) > 0 ? (pendingRDMonths > 0 ? pendingRDMonths : 1) : 0
+    });
 
     const whatsappUrl = `https://wa.me/91${member.mobile}?text=${encodeURIComponent(whatsappMsg)}`;
     window.open(whatsappUrl, '_blank');
@@ -867,6 +879,14 @@ Do you still want to proceed creating an account for "${formData.name}"?`);
             <BadgeAlert size={16} color="var(--danger)" />
           </div>
           <span className="summary-value" style={{ color: 'var(--danger)' }}>₹{formatCurrency(stats.totalDueInterest)}</span>
+        </div>
+
+        <div className="summary-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="summary-label">{t('lblLateFee')}</span>
+            <ShieldAlert size={16} color="var(--danger)" />
+          </div>
+          <span className="summary-value" style={{ color: 'var(--danger)' }}>₹{formatCurrency(stats.totalLateFee)}</span>
         </div>
 
         <div className="summary-card">

@@ -15,6 +15,7 @@ export interface DashboardStatsResult {
   totalLoanInterestCollected: number;
   totalLoanInterestPending: number;
   totalPendingRDAmount: number;
+  totalLateFineCollected: number;
   futureRDExpected: number;
   futureBonusExpected: number;
   futureInterestExpected: number;
@@ -222,8 +223,13 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
     totalLoanRecovered += mLoanRecovered;
     totalLoanInterestCollected += mIntCollected;
 
-    const mCurrentBal = mLoanGiven - mLoanRecovered;
-    if (mCurrentBal > 0) hasLoanMembers++;
+    const mCurrentBal = Math.max(0, mLoanGiven - mLoanRecovered);
+    if (mCurrentBal > 0) {
+      hasLoanMembers++;
+      if (remainingMonths > 0) {
+        futureInterestExpected += Math.round(mCurrentBal * (loanInterestRate / 100) * remainingMonths);
+      }
+    }
 
     let runningLoanBal = 0;
     let mIntEarned = 0;
@@ -235,12 +241,13 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
       });
       const loanDisbursedThisMonth = loansThisMonth.reduce((s, l) => s + l.principalAmount, 0);
       
-      const monthlyInterest = runningLoanBal > 0 ? (runningLoanBal * loanInterestRate) / 100 : 0;
+      const monthlyInterest = runningLoanBal > 0 ? Math.round((runningLoanBal * loanInterestRate) / 100) : 0;
       mIntEarned += monthlyInterest;
       runningLoanBal += loanDisbursedThisMonth;
       
       const rep = mReps.find(x => x.monthIndex === i);
       if (rep) runningLoanBal -= rep.principalPaid;
+      runningLoanBal = Math.max(0, runningLoanBal);
     }
     totalLoanInterestEarned += mIntEarned;
 
@@ -248,7 +255,7 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
   });
 
   const totalOwedToMembers = activeRDCollected + activeBonusPayable;
-  const totalOutstandingLoan = totalLoanGiven - totalLoanRecovered;
+  const totalOutstandingLoan = Math.max(0, totalLoanGiven - totalLoanRecovered);
   const totalLoanInterestPending = Math.max(0, totalLoanInterestEarned - totalLoanInterestCollected);
   
   const totalExpectedFutureIncome = futureRDExpected + futureInterestExpected;
@@ -268,7 +275,11 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
     return {
       name: monthName,
       CashIn: val.rd + val.loanRepaid + val.intCollected + val.lateFee,
-      CashOut: val.loanGiven
+      CashOut: val.loanGiven,
+      rd: val.rd,
+      loanRepaid: val.loanRepaid,
+      intCollected: val.intCollected,
+      lateFee: val.lateFee
     };
   }).reverse();
 
@@ -287,6 +298,7 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
     totalLoanInterestCollected,
     totalLoanInterestPending,
     totalPendingRDAmount,
+    totalLateFineCollected,
     futureRDExpected,
     futureBonusExpected,
     futureInterestExpected,
