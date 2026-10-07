@@ -74,22 +74,57 @@ function calculateRdInterest(
 }
 
 // Module-level cache to preserve search, filter, and selected member states across navigation/re-renders
+export interface AdvancedFiltersState {
+  dateFrom: string;
+  dateTo: string;
+  amountMin: string;
+  amountMax: string;
+  savedMin: string;
+  savedMax: string;
+  pendingMin: string;
+  pendingMax: string;
+  paidMin: string;
+  paidMax: string;
+  loanMin: string;
+  loanMax: string;
+  interestMin: string;
+  interestMax: string;
+  lateFeeMin: string;
+  lateFeeMax: string;
+  totalPayMin: string;
+  totalPayMax: string;
+  profitMin: string;
+  profitMax: string;
+}
+
+const defaultAdvancedFilters: AdvancedFiltersState = {
+  dateFrom: '',
+  dateTo: '',
+  amountMin: '',
+  amountMax: '',
+  savedMin: '',
+  savedMax: '',
+  pendingMin: '',
+  pendingMax: '',
+  paidMin: '',
+  paidMax: '',
+  loanMin: '',
+  loanMax: '',
+  interestMin: '',
+  interestMax: '',
+  lateFeeMin: '',
+  lateFeeMax: '',
+  totalPayMin: '',
+  totalPayMax: '',
+  profitMin: '',
+  profitMax: '',
+};
+
 interface MembersViewStateCache {
   searchTerm: string;
   statusFilter: 'ACTIVE' | 'ALL' | 'LOAN_ACTIVE' | 'RD_PENDING' | 'RD_COMPLETED_FULL' | 'RD_CLOSED_MIDDLE' | 'RD_PAID_UP_TO_DATE';
   showAdvancedFilters: boolean;
-  advancedFilters: {
-    dateFrom: string;
-    dateTo: string;
-    amountMin: string;
-    amountMax: string;
-    pendingMin: string;
-    pendingMax: string;
-    paidMin: string;
-    paidMax: string;
-    loanMin: string;
-    loanMax: string;
-  };
+  advancedFilters: AdvancedFiltersState;
   sortConfig: { key: string; direction: 'asc' | 'desc' } | null;
   highlightedMemberId: string | null;
 }
@@ -98,18 +133,7 @@ const membersStateCache: MembersViewStateCache = {
   searchTerm: '',
   statusFilter: 'ACTIVE',
   showAdvancedFilters: false,
-  advancedFilters: {
-    dateFrom: '',
-    dateTo: '',
-    amountMin: '',
-    amountMax: '',
-    pendingMin: '',
-    pendingMax: '',
-    paidMin: '',
-    paidMax: '',
-    loanMin: '',
-    loanMax: ''
-  },
+  advancedFilters: { ...defaultAdvancedFilters },
   sortConfig: null,
   highlightedMemberId: null,
 };
@@ -129,14 +153,8 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
   
   // Advanced Filters
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(() => membersStateCache.showAdvancedFilters);
-  const [advancedFilters, setAdvancedFilters] = useState(() => membersStateCache.advancedFilters);
-  const isFilterActive = !!(
-    advancedFilters.dateFrom || advancedFilters.dateTo || 
-    advancedFilters.amountMin || advancedFilters.amountMax ||
-    advancedFilters.pendingMin || advancedFilters.pendingMax ||
-    advancedFilters.paidMin || advancedFilters.paidMax ||
-    advancedFilters.loanMin || advancedFilters.loanMax
-  );
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFiltersState>(() => membersStateCache.advancedFilters);
+  const isFilterActive = Object.values(advancedFilters).some(val => val !== '');
   
   // Sorting State
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(() => membersStateCache.sortConfig);
@@ -456,6 +474,12 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
     if (advancedFilters.amountMax) {
       result = result.filter(m => m.monthlyContribution <= Number(advancedFilters.amountMax));
     }
+    if (advancedFilters.savedMin) {
+      result = result.filter(m => m.totalSaved >= Number(advancedFilters.savedMin));
+    }
+    if (advancedFilters.savedMax) {
+      result = result.filter(m => m.totalSaved <= Number(advancedFilters.savedMax));
+    }
     if (advancedFilters.pendingMin) {
       result = result.filter(m => m.pendingMonths >= Number(advancedFilters.pendingMin));
     }
@@ -473,6 +497,30 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
     }
     if (advancedFilters.loanMax) {
       result = result.filter(m => m.loanPrincipal <= Number(advancedFilters.loanMax));
+    }
+    if (advancedFilters.interestMin) {
+      result = result.filter(m => m.loanInterest >= Number(advancedFilters.interestMin));
+    }
+    if (advancedFilters.interestMax) {
+      result = result.filter(m => m.loanInterest <= Number(advancedFilters.interestMax));
+    }
+    if (advancedFilters.lateFeeMin) {
+      result = result.filter(m => m.calculatedLateFee >= Number(advancedFilters.lateFeeMin));
+    }
+    if (advancedFilters.lateFeeMax) {
+      result = result.filter(m => m.calculatedLateFee <= Number(advancedFilters.lateFeeMax));
+    }
+    if (advancedFilters.totalPayMin) {
+      result = result.filter(m => m.totalAmountToPay >= Number(advancedFilters.totalPayMin));
+    }
+    if (advancedFilters.totalPayMax) {
+      result = result.filter(m => m.totalAmountToPay <= Number(advancedFilters.totalPayMax));
+    }
+    if (advancedFilters.profitMin) {
+      result = result.filter(m => m.netProfitLossValue >= Number(advancedFilters.profitMin));
+    }
+    if (advancedFilters.profitMax) {
+      result = result.filter(m => m.netProfitLossValue <= Number(advancedFilters.profitMax));
     }
 
     return result;
@@ -893,68 +941,174 @@ Do you still want to proceed creating an account for "${formData.name}"?`);
                 position: 'absolute',
                 top: 'calc(100% + 8px)',
                 left: 0,
-                background: '#fff',
+                background: '#ffffff',
                 border: '1px solid var(--border)',
-                borderRadius: '8px',
-                padding: '16px',
-                width: '320px',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                zIndex: 50,
+                borderRadius: '12px',
+                padding: '18px',
+                width: '380px',
+                maxHeight: '75vh',
+                overflowY: 'auto',
+                boxShadow: '0 12px 36px rgba(0,0,0,0.18)',
+                zIndex: 100,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px'
+                gap: '14px'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('advancedFilters')}</strong>
-                  <X size={16} style={{ cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setShowAdvancedFilters(false)} />
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '10px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Filter size={16} color="var(--primary)" />
+                    <strong style={{ fontSize: `calc(15px * var(--text-scale, 1))`, color: 'var(--text-main)' }}>{t('advancedFilters')}</strong>
+                    {isFilterActive && (
+                      <span style={{
+                        fontSize: `calc(10px * var(--text-scale, 1))`,
+                        padding: '2px 8px',
+                        backgroundColor: 'var(--primary)',
+                        color: '#fff',
+                        borderRadius: '10px',
+                        fontWeight: 600
+                      }}>
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <button 
+                    onClick={() => setShowAdvancedFilters(false)} 
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                    title={t('close')}
+                  >
+                    <X size={18} color="var(--text-muted)" />
+                  </button>
                 </div>
                 
+                {/* 1. Join Date */}
                 <div>
-                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('joinDate')}</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px', display: 'block' }}>
+                    {t('joinDate')}
+                  </label>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <input type="date" className="input-compact" value={advancedFilters.dateFrom} onChange={e => setAdvancedFilters(f => ({ ...f, dateFrom: e.target.value }))} placeholder={t('dateFrom')} />
-                    <input type="date" className="input-compact" value={advancedFilters.dateTo} onChange={e => setAdvancedFilters(f => ({ ...f, dateTo: e.target.value }))} placeholder={t('dateTo')} />
+                    <input type="date" className="input-compact" value={advancedFilters.dateFrom} onChange={e => setAdvancedFilters(f => ({ ...f, dateFrom: e.target.value }))} title={t('dateFrom')} />
+                    <input type="date" className="input-compact" value={advancedFilters.dateTo} onChange={e => setAdvancedFilters(f => ({ ...f, dateTo: e.target.value }))} title={t('dateTo')} />
                   </div>
                 </div>
 
+                {/* 2. Monthly Saving */}
                 <div>
-                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('monthlyContribution')}</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px', display: 'block' }}>
+                    {t('monthlyContribution')} (₹)
+                  </label>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <input type="number" className="input-compact" value={advancedFilters.amountMin} onChange={e => setAdvancedFilters(f => ({ ...f, amountMin: e.target.value }))} placeholder="Min" />
-                    <input type="number" className="input-compact" value={advancedFilters.amountMax} onChange={e => setAdvancedFilters(f => ({ ...f, amountMax: e.target.value }))} placeholder="Max" />
+                    <input type="number" className="input-compact" value={advancedFilters.amountMin} onChange={e => setAdvancedFilters(f => ({ ...f, amountMin: e.target.value }))} placeholder="Min ₹" />
+                    <input type="number" className="input-compact" value={advancedFilters.amountMax} onChange={e => setAdvancedFilters(f => ({ ...f, amountMax: e.target.value }))} placeholder="Max ₹" />
                   </div>
                 </div>
 
+                {/* 3. Total Saved */}
                 <div>
-                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('pendingMonthsRange')}</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px', display: 'block' }}>
+                    {t('savedSoFar')} (₹)
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input type="number" className="input-compact" value={advancedFilters.savedMin} onChange={e => setAdvancedFilters(f => ({ ...f, savedMin: e.target.value }))} placeholder="Min ₹" />
+                    <input type="number" className="input-compact" value={advancedFilters.savedMax} onChange={e => setAdvancedFilters(f => ({ ...f, savedMax: e.target.value }))} placeholder="Max ₹" />
+                  </div>
+                </div>
+
+                {/* 4. RD Pending Months */}
+                <div>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px', display: 'block' }}>
+                    {t('pendingMonthsRange')}
+                  </label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input type="number" className="input-compact" value={advancedFilters.pendingMin} onChange={e => setAdvancedFilters(f => ({ ...f, pendingMin: e.target.value }))} placeholder="Min" />
                     <input type="number" className="input-compact" value={advancedFilters.pendingMax} onChange={e => setAdvancedFilters(f => ({ ...f, pendingMax: e.target.value }))} placeholder="Max" />
                   </div>
                 </div>
 
+                {/* 5. RD Paid Months */}
                 <div>
-                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('paidMonthsRange')}</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px', display: 'block' }}>
+                    {t('paidMonthsRange')}
+                  </label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input type="number" className="input-compact" value={advancedFilters.paidMin} onChange={e => setAdvancedFilters(f => ({ ...f, paidMin: e.target.value }))} placeholder="Min" />
                     <input type="number" className="input-compact" value={advancedFilters.paidMax} onChange={e => setAdvancedFilters(f => ({ ...f, paidMax: e.target.value }))} placeholder="Max" />
                   </div>
                 </div>
 
+                {/* 6. Active Loan Principal */}
                 <div>
-                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('loanAmountRange')}</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px', display: 'block' }}>
+                    {t('loan')} (₹)
+                  </label>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <input type="number" className="input-compact" value={advancedFilters.loanMin} onChange={e => setAdvancedFilters(f => ({ ...f, loanMin: e.target.value }))} placeholder="Min" />
-                    <input type="number" className="input-compact" value={advancedFilters.loanMax} onChange={e => setAdvancedFilters(f => ({ ...f, loanMax: e.target.value }))} placeholder="Max" />
+                    <input type="number" className="input-compact" value={advancedFilters.loanMin} onChange={e => setAdvancedFilters(f => ({ ...f, loanMin: e.target.value }))} placeholder="Min ₹" />
+                    <input type="number" className="input-compact" value={advancedFilters.loanMax} onChange={e => setAdvancedFilters(f => ({ ...f, loanMax: e.target.value }))} placeholder="Max ₹" />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                  <button className="btn" style={{ flex: 1, background: 'var(--border)' }} onClick={() => { setAdvancedFilters({dateFrom: '', dateTo: '', amountMin: '', amountMax: '', pendingMin: '', pendingMax: '', paidMin: '', paidMax: '', loanMin: '', loanMax: ''}); setShowAdvancedFilters(false); }}>
+                {/* 7. Due Interest */}
+                <div>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px', display: 'block' }}>
+                    {t('dueInterest')} (₹)
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input type="number" className="input-compact" value={advancedFilters.interestMin} onChange={e => setAdvancedFilters(f => ({ ...f, interestMin: e.target.value }))} placeholder="Min ₹" />
+                    <input type="number" className="input-compact" value={advancedFilters.interestMax} onChange={e => setAdvancedFilters(f => ({ ...f, interestMax: e.target.value }))} placeholder="Max ₹" />
+                  </div>
+                </div>
+
+                {/* 8. Late Fee */}
+                <div>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px', display: 'block' }}>
+                    {t('lblLateFee')} (₹)
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input type="number" className="input-compact" value={advancedFilters.lateFeeMin} onChange={e => setAdvancedFilters(f => ({ ...f, lateFeeMin: e.target.value }))} placeholder="Min ₹" />
+                    <input type="number" className="input-compact" value={advancedFilters.lateFeeMax} onChange={e => setAdvancedFilters(f => ({ ...f, lateFeeMax: e.target.value }))} placeholder="Max ₹" />
+                  </div>
+                </div>
+
+                {/* 9. Total Amount to Pay */}
+                <div>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px', display: 'block' }}>
+                    {t('totalAmountToPay')} (₹)
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input type="number" className="input-compact" value={advancedFilters.totalPayMin} onChange={e => setAdvancedFilters(f => ({ ...f, totalPayMin: e.target.value }))} placeholder="Min ₹" />
+                    <input type="number" className="input-compact" value={advancedFilters.totalPayMax} onChange={e => setAdvancedFilters(f => ({ ...f, totalPayMax: e.target.value }))} placeholder="Max ₹" />
+                  </div>
+                </div>
+
+                {/* 10. Net Profit / Loss */}
+                <div>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px', display: 'block' }}>
+                    {t('netProfitLoss')} (₹)
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input type="number" className="input-compact" value={advancedFilters.profitMin} onChange={e => setAdvancedFilters(f => ({ ...f, profitMin: e.target.value }))} placeholder="Min ₹" />
+                    <input type="number" className="input-compact" value={advancedFilters.profitMax} onChange={e => setAdvancedFilters(f => ({ ...f, profitMax: e.target.value }))} placeholder="Max ₹" />
+                  </div>
+                </div>
+
+                {/* Footer Action Buttons */}
+                <div style={{ display: 'flex', gap: '10px', marginTop: '6px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
+                  <button 
+                    className="btn" 
+                    style={{ flex: 1, background: '#f1f5f9', border: '1px solid var(--border)', color: 'var(--text-main)', fontWeight: 600 }} 
+                    onClick={() => { 
+                      setAdvancedFilters({ ...defaultAdvancedFilters }); 
+                      setShowAdvancedFilters(false); 
+                    }}
+                  >
                     {t('clear')}
                   </button>
-                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => setShowAdvancedFilters(false)}>
-                    {t('apply')}
+                  <button 
+                    className="btn btn-primary" 
+                    style={{ flex: 1, fontWeight: 600 }} 
+                    onClick={() => setShowAdvancedFilters(false)}
+                  >
+                    {t('done')} ({filtered.length})
                   </button>
                 </div>
               </div>

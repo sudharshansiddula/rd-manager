@@ -47,6 +47,9 @@ export const translations: Translations = {
   upToDate: { en: 'Up to date', te: 'పూర్తిగా కట్టారు' },
   completed: { en: 'Completed', te: 'పూర్తయింది' },
   selected: { en: 'Selected', te: 'సెలెక్ట్ చేయబడింది' },
+  netProfitLoss: { en: 'Net Profit / Loss', te: 'నికర లాభం / నష్టం' },
+  close: { en: 'Close', te: 'క్లోజ్' },
+  done: { en: 'Done', te: 'పూర్తయింది' },
   
   // Summary Cards
   totalMembers: { en: 'Members (Active/Total)', te: 'సభ్యులు (యాక్టివ్/మొత్తం)' },
