@@ -660,7 +660,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: closeDateStr ? '#fff0f0' : '#f8f9fa', border: `1px solid ${closeDateStr ? 'var(--danger)' : 'var(--border)'}`, borderRadius: '8px' }}>
               {closeDateStr ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--danger)' }}>Closed on:</span>
+                  <span style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)' }}>Closed on:</span>
                   <input
                     type="month"
                     value={closeDateStr}
@@ -758,7 +758,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
 
           {/* Loan Dashboard */}
           <div className="card" style={{ flex: '1 1 300px', padding: '16px', borderLeft: '4px solid var(--danger)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--danger)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)' }}>
               <Wallet size={18} />
               <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('loanDetails')}</strong>
               <div title={t('loanTooltip')} style={{ cursor: 'help', display: 'flex', marginLeft: 'auto' }}>
@@ -788,7 +788,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
           {/* Due / Settlement Dashboard */}
           {isSettlementMode ? (
             <div className="card" style={{ flex: '1 1 300px', padding: '16px', borderLeft: '4px solid var(--danger)', backgroundColor: '#fff0f0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--danger)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)' }}>
                 <AlertCircle size={18} />
                 <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('finalSettlement')} {closeDateStr ? '(Premature)' : '(Completed)'}</strong>
                 <div title={t('settlementTooltip')} style={{ cursor: 'help', display: 'flex', marginLeft: 'auto' }}>
@@ -854,7 +854,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
               </div>
               
               <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed var(--danger)' }}>
-                <div style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--danger)', marginBottom: '8px' }}>
+                <div style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)', marginBottom: '8px' }}>
                   {t('settlementPaymentDetails')}
                 </div>
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
@@ -893,7 +893,10 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '12px' }}>
                 <div>
-                  <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('pendingRDM')} ({pendingRDMonths} {t('months')})</div>
+                  <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('pendingRDM')}
+                      <div style={{ color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)', fontWeight: 'bold', fontSize: `calc(14px * var(--text-scale, 1))`, marginTop: '4px' }}>
+                        ({pendingRDMonths} {t('months')})
+                      </div></div>
                   <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))` }}>₹{formatCurrency(pendingRDAmount)}</div>
                 </div>
                 <div>
@@ -914,7 +917,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                 </div>
                 <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: '16px' }}>
                   <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('totalAmountToPay')}</div>
-                  <div style={{ fontWeight: 700, fontSize: `calc(18px * var(--text-scale, 1))`, color: 'var(--danger)' }}>₹{formatCurrency(totalAmountDueThisMonth)}</div>
+                  <div style={{ fontWeight: 700, fontSize: `calc(18px * var(--text-scale, 1))`, color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)' }}>₹{formatCurrency(totalAmountDueThisMonth)}</div>
                 </div>
               </div>
             </div>
@@ -1009,7 +1012,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                     </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>
                       {t('loanOut')} (₹)
-                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>{sumLoanDisbursed > 0 ? `(₹${formatCurrency(sumLoanDisbursed)})` : '-'}</div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)', marginTop: '4px', fontWeight: 700 }}>{sumLoanDisbursed > 0 ? `(₹${formatCurrency(sumLoanDisbursed)})` : '-'}</div>
                     </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>
                       {t('principalRepayment')}
@@ -1021,7 +1024,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                     </th>
                     <th style={{ textAlign: 'right', width: '70px', wordWrap: 'break-word' }}>
                       {t('lateFee')}
-                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>{sumLateFee > 0 ? `(₹${formatCurrency(sumLateFee)})` : '-'}</div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)', marginTop: '4px', fontWeight: 700 }}>{sumLateFee > 0 ? `(₹${formatCurrency(sumLateFee)})` : '-'}</div>
                     </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>
                       {t('totalPaid')}
@@ -1029,7 +1032,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                     </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>
                       {t('remainingLoan')}
-                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>{currentLoanBal > 0 ? `(₹${formatCurrency(currentLoanBal)})` : '-'}</div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)', marginTop: '4px', fontWeight: 700 }}>{currentLoanBal > 0 ? `(₹${formatCurrency(currentLoanBal)})` : '-'}</div>
                     </th>
                     <th style={{ width: '70px', fontSize: `calc(11px * var(--text-scale, 1))`, textAlign: 'center', lineHeight: '1.2' }}>{t('updatedAt')}</th>
                     <th style={{ width: '100px', textAlign: 'center', verticalAlign: 'top' }}>{t('actions')}</th>
@@ -1311,7 +1314,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
           }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: `calc(18px * var(--text-scale, 1))`, color: 'var(--danger)' }}>Delete Member</h3>
+              <h3 style={{ margin: 0, fontSize: `calc(18px * var(--text-scale, 1))`, color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)' }}>Delete Member</h3>
               <button onClick={() => setIsDeletingProfile(false)} className="btn" style={{ padding: '8px', background: '#f1f3f5' }}>
                 <X size={18} />
               </button>
@@ -1393,14 +1396,14 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                         <td style={{ padding: '8px 4px', fontWeight: 500 }}>{row.month}</td>
                         <td style={{ padding: '8px 4px' }}>₹{formatCurrency(row.pendingAmount)} <span style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>({row.rate}%)</span></td>
                         <td style={{ padding: '8px 4px' }}>{row.multiplier} {row.periodText}</td>
-                        <td style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 600, color: 'var(--danger)' }}>₹{row.fine}</td>
+                        <td style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 600, color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)' }}>₹{row.fine}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot style={{ position: 'sticky', bottom: '-20px', backgroundColor: 'var(--bg-app)', zIndex: 2, boxShadow: '0 -1px 0 var(--border)' }}>
                     <tr>
                       <td colSpan={3} style={{ padding: '16px 4px', textAlign: 'right', fontWeight: 600 }}>{t('totalAmountToPay')} ({lateFeeBreakdown.length} {t('months')}):</td>
-                      <td style={{ padding: '16px 4px', textAlign: 'right', fontWeight: 700, fontSize: `calc(15px * var(--text-scale, 1))`, color: 'var(--danger)' }}>₹{formatCurrency(calculatedLateFee)}</td>
+                      <td style={{ padding: '16px 4px', textAlign: 'right', fontWeight: 700, fontSize: `calc(15px * var(--text-scale, 1))`, color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)' }}>₹{formatCurrency(calculatedLateFee)}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -1495,3 +1498,5 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
     </div>
   );
 };
+
+
