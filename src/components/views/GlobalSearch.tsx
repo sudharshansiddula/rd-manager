@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, User, Phone, ArrowRight } from 'lucide-react';
+import { Search, User, Phone, ArrowRight, X } from 'lucide-react';
 import { StorageService, storageEvents } from '../../engine/storage';
 import type { Member } from '../../types';
 import { useI18n } from '../../locales/i18n';
@@ -28,12 +28,23 @@ export const GlobalSearch = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const results = query.length >= 2 
+  const trimmedQuery = query.trim().toLowerCase();
+  const results = trimmedQuery.length >= 1 
     ? members.filter(m => 
-        m.name.toLowerCase().includes(query.toLowerCase()) || 
-        m.memberNumber.toLowerCase().includes(query.toLowerCase()) ||
-        (m.mobile && m.mobile.includes(query))
-      ).slice(0, 5) // Limit to top 5 results for speed
+        m.name.toLowerCase().includes(trimmedQuery) || 
+        m.memberNumber.toLowerCase().includes(trimmedQuery) ||
+        (m.mobile && m.mobile.toLowerCase().includes(trimmedQuery))
+      ).sort((a, b) => {
+        const aExact = a.memberNumber.toLowerCase() === trimmedQuery;
+        const bExact = b.memberNumber.toLowerCase() === trimmedQuery;
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+        const aStarts = a.memberNumber.toLowerCase().startsWith(trimmedQuery);
+        const bStarts = b.memberNumber.toLowerCase().startsWith(trimmedQuery);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return 0;
+      }).slice(0, 8)
     : [];
 
   const handleSelect = (member: Member) => {
@@ -48,8 +59,8 @@ export const GlobalSearch = () => {
 
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '300px', marginLeft: 'auto' }}>
-      <div style={{ position: 'relative' }}>
-        <Search size={18} color="#9ca3af" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <Search size={18} color="#9ca3af" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
         <input
           type="text"
           placeholder={t('searchHint') || "Global search..."}
@@ -61,7 +72,7 @@ export const GlobalSearch = () => {
           onFocus={() => setIsOpen(true)}
           style={{
             width: '100%',
-            padding: '10px 12px 10px 40px',
+            padding: '10px 36px 10px 38px',
             border: '1px solid #e5e7eb',
             borderRadius: '20px',
             fontSize: `calc(14px * var(--text-scale, 1))`,
@@ -71,9 +82,20 @@ export const GlobalSearch = () => {
           }}
           className="global-search-input"
         />
+        {query && (
+          <X 
+            size={16} 
+            color="#9ca3af" 
+            style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer' }}
+            onClick={() => {
+              setQuery('');
+              setIsOpen(false);
+            }}
+          />
+        )}
       </div>
 
-      {isOpen && query.length >= 2 && (
+      {isOpen && trimmedQuery.length >= 1 && (
         <div style={{
           position: 'absolute',
           top: '100%',
@@ -85,7 +107,9 @@ export const GlobalSearch = () => {
           boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
           border: '1px solid #e5e7eb',
           zIndex: 1000,
-          overflow: 'hidden'
+          overflow: 'hidden',
+          maxHeight: '360px',
+          overflowY: 'auto'
         }}>
           {results.length > 0 ? (
             results.map(member => (
@@ -121,7 +145,7 @@ export const GlobalSearch = () => {
             ))
           ) : (
             <div style={{ padding: '16px', textAlign: 'center', color: '#6b7280', fontSize: `calc(14px * var(--text-scale, 1))` }}>
-              No results found
+              {t('noData') || "No results found"}
             </div>
           )}
         </div>
@@ -129,3 +153,4 @@ export const GlobalSearch = () => {
     </div>
   );
 };
+

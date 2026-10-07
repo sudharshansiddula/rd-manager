@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { StorageService, storageEvents } from '../../engine/storage';
 import type { Member, RDInstallment, Loan, LoanRepayment } from '../../types';
-import { Search, Filter, Calendar, Phone, PiggyBank, Wallet, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Filter, Calendar, Phone, PiggyBank, Wallet, AlertCircle, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { formatCurrency } from '../../utils';
 import { useI18n } from '../../locales/i18n';
 
@@ -231,11 +231,14 @@ export const TransactionsView = () => {
 
       const memberName = member.name.toLowerCase();
       const memberNo = member.memberNumber.toLowerCase();
+      const memberMobile = (member.mobile || '').toLowerCase();
+      const term = searchTerm.trim().toLowerCase();
       
-      // Search filter
-      const matchesSearch = memberName.includes(searchTerm.toLowerCase()) || 
-                            memberNo.includes(searchTerm.toLowerCase()) ||
-                            (member.mobile && member.mobile.includes(searchTerm));
+      // Search filter: Account number, Name, Mobile
+      const matchesSearch = !term || 
+                            memberNo.includes(term) ||
+                            memberName.includes(term) || 
+                            memberMobile.includes(term);
                             
       // Date filter
       let matchesDate = true;
@@ -308,10 +311,25 @@ export const TransactionsView = () => {
 
   const sortedEntries = useMemo(() => {
     let sortableItems = [...filteredEntries];
+    const term = searchTerm.trim().toLowerCase();
+
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         const memberA = members[a.memberId];
         const memberB = members[b.memberId];
+
+        // If search term is present, prioritize exact account number matches first
+        if (term) {
+          const aExact = memberA?.memberNumber.toLowerCase() === term;
+          const bExact = memberB?.memberNumber.toLowerCase() === term;
+          if (aExact && !bExact) return -1;
+          if (!aExact && bExact) return 1;
+          const aStarts = memberA?.memberNumber.toLowerCase().startsWith(term);
+          const bStarts = memberB?.memberNumber.toLowerCase().startsWith(term);
+          if (aStarts && !bStarts) return -1;
+          if (!aStarts && bStarts) return 1;
+        }
+
         const statsA = memberStats[a.memberId] || {};
         const statsB = memberStats[b.memberId] || {};
 
@@ -397,15 +415,23 @@ export const TransactionsView = () => {
       {/* Filters */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px', background: '#fff', padding: '16px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 250px', display: 'flex', alignItems: 'center', background: '#f9fafb', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-            <Search size={18} color="#6b7280" style={{ marginRight: '8px' }} />
+          <div style={{ flex: '1 1 250px', position: 'relative', display: 'flex', alignItems: 'center', background: '#f9fafb', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+            <Search size={18} color="#6b7280" style={{ marginRight: '8px', flexShrink: 0 }} />
             <input 
               type="text" 
               placeholder={t('searchHint')} 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%' }}
+              style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', paddingRight: searchTerm ? '24px' : '0' }}
             />
+            {searchTerm && (
+              <X 
+                size={16} 
+                color="#6b7280" 
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', flexShrink: 0 }} 
+                onClick={() => setSearchTerm('')} 
+              />
+            )}
           </div>
           
           <button 
