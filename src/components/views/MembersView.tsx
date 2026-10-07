@@ -83,7 +83,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'LOAN_ACTIVE' | 'RD_PENDING' | 'RD_COMPLETED' | 'RD_UP_TO_DATE'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'ALL' | 'LOAN_ACTIVE' | 'RD_PENDING' | 'RD_COMPLETED_FULL' | 'RD_CLOSED_MIDDLE' | 'RD_PAID_UP_TO_DATE'>('ACTIVE');
   const [currentInterestRate, setCurrentInterestRate] = useState(0.00882434);
   
   // Advanced Filters
@@ -300,19 +300,30 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
   // Filtering
   const filtered = useMemo(() => {
     let result = enrichedMembers.filter(m => 
-      m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      m.memberNumber.includes(searchTerm) ||
-      (m.mobile && m.mobile.includes(searchTerm))
-    );
+        m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        m.memberNumber.includes(searchTerm) ||
+        (m.mobile && m.mobile.includes(searchTerm))
+      );
+      if (searchTerm) {
+        result.sort((a, b) => {
+          if (a.memberNumber === searchTerm && b.memberNumber !== searchTerm) return -1;
+          if (b.memberNumber === searchTerm && a.memberNumber !== searchTerm) return 1;
+          return 0;
+        });
+      }
 
-    if (statusFilter === 'LOAN_ACTIVE') {
+    if (statusFilter === 'ACTIVE') {
+      result = result.filter(m => m.status === 'ACTIVE');
+    } else if (statusFilter === 'LOAN_ACTIVE') {
       result = result.filter(m => m.loanPrincipal > 0);
     } else if (statusFilter === 'RD_PENDING') {
-      result = result.filter(m => m.pendingMonths > 0 && !m.isCompleted);
-    } else if (statusFilter === 'RD_COMPLETED') {
-      result = result.filter(m => m.isCompleted);
-    } else if (statusFilter === 'RD_UP_TO_DATE') {
-      result = result.filter(m => m.pendingMonths <= 0 && !m.isCompleted);
+      result = result.filter(m => m.status === 'ACTIVE' && m.pendingMonths > 0 && !m.isCompleted);
+    } else if (statusFilter === 'RD_COMPLETED_FULL') {
+      result = result.filter(m => m.status === 'MATURED' || m.isCompleted);
+    } else if (statusFilter === 'RD_CLOSED_MIDDLE') {
+      result = result.filter(m => m.status === 'CLOSED' && !m.isCompleted);
+    } else if (statusFilter === 'RD_PAID_UP_TO_DATE') {
+      result = result.filter(m => m.status === 'ACTIVE' && m.pendingMonths <= 0 && !m.isCompleted);
     }
 
     if (advancedFilters.dateFrom) {
@@ -351,18 +362,20 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
 
   // Dashboard Stats - Now calculates based on filtered list so dashboard reflects active filters
   const stats = useMemo(() => {
-    return filtered.reduce((acc, m) => {
-      acc.totalMembers++;
-      if (m.status === 'ACTIVE') {
-        acc.activeMembers++;
+      return filtered.reduce((acc, m) => {
+        acc.totalMembers++;
         acc.totalSaved += (m.paidMonths * m.monthlyContribution);
-        if (m.pendingMonths > 0) acc.pendingMembers++;
-      }
+        if (m.pendingMonths > 0 && !m.isCompleted) acc.pendingMembers++;
+        if (m.status === 'ACTIVE') {
+          acc.activeMembers++;
+        }
       if (m.loanPrincipal > 0) {
         acc.activeLoans++;
         acc.totalLoansAmount += m.loanPrincipal;
       }
       acc.totalDueInterest += m.loanInterest;
+      acc.totalAmountToPay += (m.totalAmountToPay || 0);
+      acc.netProfitLossValue += (m.netProfitLossValue || 0);
       return acc;
     }, { 
       totalMembers: 0, 
@@ -371,8 +384,10 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       activeLoans: 0, 
       totalLoansAmount: 0, 
       totalDueInterest: 0,
-      pendingMembers: 0
-    });
+      pendingMembers: 0,
+        totalAmountToPay: 0,
+        netProfitLossValue: 0
+      });
   }, [filtered]);
 
   // Sorting
@@ -579,7 +594,9 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
     const existingWithMobile = members.find(m => m.mobile === formData.mobile);
     if (existingWithMobile && formData.mobile && formData.mobile.trim() !== '') {
       if (existingWithMobile.name.toLowerCase() !== formData.name?.toLowerCase()) {
-        const proceed = window.confirm(`Warning: The mobile number ${formData.mobile} is already registered under the name "${existingWithMobile.name}".\n\nDo you still want to proceed creating an account for "${formData.name}"?`);
+        const proceed = window.confirm(`Warning: The mobile number ${formData.mobile} is already registered under the name "${existingWithMobile.name}".
+
+Do you still want to proceed creating an account for "${formData.name}"?`);
         if (!proceed) return;
       }
     }
@@ -612,14 +629,22 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       
       {/* Summary Dashboard Cards */}
       <div className="summary-grid">
-        <div className="summary-card">
+          <div className="summary-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="summary-label">{t('totalMembers')}</span>
             <Users size={16} color="var(--primary)" />
           </div>
-          <span className="summary-value">{stats.activeMembers} <span style={{ fontSize: `calc(14px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>/ {stats.totalMembers}</span></span>
+          <span className="summary-value">{filtered.length} <span style={{ fontSize: `calc(14px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>/ {enrichedMembers.length}</span></span>
         </div>
         
+        <div className="summary-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="summary-label">{t('pendingMembers')}</span>
+            <ShieldAlert size={16} color="var(--danger)" />
+          </div>
+          <span className="summary-value" style={{ color: 'var(--danger)' }}>{stats.pendingMembers}</span>
+        </div>
+
         <div className="summary-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="summary-label">{t('totalSavedAmount')}</span>
@@ -648,12 +673,20 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
 
         <div className="summary-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="summary-label">{t('pendingMembers')}</span>
-            <ShieldAlert size={16} color="var(--danger)" />
+            <span className="summary-label">టోటల్ సభ్యులు కట్టాల్సిన మొత్తం</span>
+            <Wallet size={16} color="var(--primary)" />
           </div>
-          <span className="summary-value" style={{ color: 'var(--danger)' }}>{stats.pendingMembers}</span>
+          <span className="summary-value" style={{ color: 'var(--primary)' }}>₹{formatCurrency(stats.totalAmountToPay)}</span>
         </div>
-      </div>
+
+        <div className="summary-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="summary-label">{t('netProfit')}</span>
+            <span style={{ fontSize: '14px' }}>{stats.netProfitLossValue >= 0 ? '📈' : '📉'}</span>
+          </div>
+          <span className="summary-value" style={{ color: stats.netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)' }}>₹{formatCurrency(Math.abs(stats.netProfitLossValue))}</span>
+        </div>
+              </div>
 
       {/* Top Action Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -661,26 +694,35 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
           <div style={{ position: 'relative', width: '350px' }}>
             <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '10px', top: '10px' }} />
             <input 
-              type="text" 
-              className="input-compact" 
-              style={{ paddingLeft: '32px', width: '100%' }}
-              placeholder={t('searchHint')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+                type="text" 
+                className="input-compact" 
+                style={{ paddingLeft: '32px', paddingRight: searchTerm ? '32px' : '10px', width: '100%' }}
+                placeholder={t('searchHint')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <X 
+                  size={16} 
+                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', cursor: 'pointer' }} 
+                  onClick={() => setSearchTerm('')} 
+                />
+              )}
           </div>
           <select 
-            className="input-compact" 
-            style={{ width: '200px' }}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-          >
-            <option value="ALL">{t('filterAll')}</option>
-            <option value="LOAN_ACTIVE">{t('filterLoanActive')}</option>
-            <option value="RD_PENDING">{t('filterRDPending')}</option>
-            <option value="RD_COMPLETED">{t('filterRDCompleted')}</option>
-            <option value="RD_UP_TO_DATE">{t('filterRDUpToDate')}</option>
-          </select>
+              className="input-compact" 
+              style={{ width: '220px' }}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+            >
+              <option value="ACTIVE">యాక్టివ్ గా ఉన్న సభ్యులు</option>
+              <option value="ALL">అందరు (All)</option>
+              <option value="LOAN_ACTIVE">అప్పు ఉన్నవారు</option>
+              <option value="RD_PENDING">ఆర్డీ బాకీ ఉన్నవారు</option>
+              <option value="RD_COMPLETED_FULL">ఆర్డీ పూర్తి నెలలకి పూర్తయినవారు</option>
+              <option value="RD_CLOSED_MIDDLE">ఆర్డీ మధ్యంతరంగా పూర్తయినవారు</option>
+              <option value="RD_PAID_UP_TO_DATE">ఆర్డీ ఇప్పటివరకు కట్టినవారు</option>
+            </select>
           <div style={{ position: 'relative' }}>
             <button 
               className="btn" 
@@ -1070,3 +1112,6 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
     </div>
   );
 };
+
+
+
