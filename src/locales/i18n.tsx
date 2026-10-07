@@ -46,6 +46,7 @@ export const translations: Translations = {
   pending: { en: 'Pending', te: 'బాకీ' },
   upToDate: { en: 'Up to date', te: 'పూర్తిగా కట్టారు' },
   completed: { en: 'Completed', te: 'పూర్తయింది' },
+  selected: { en: 'Selected', te: 'సెలెక్ట్ చేయబడింది' },
   
   // Summary Cards
   totalMembers: { en: 'Members (Active/Total)', te: 'సభ్యులు (యాక్టివ్/మొత్తం)' },
@@ -55,11 +56,14 @@ export const translations: Translations = {
   pendingMembers: { en: 'Pending RD Members', te: 'పెండింగ్ ఉన్న సభ్యులు' },
 
   // Filters
-  filterAll: { en: 'All Members', te: 'అందరూ' },
-  filterLoanActive: { en: 'Has Active Loan', te: 'అప్పు ఉన్నవారు' },
-  filterRDPending: { en: 'RD Pending', te: 'RD బాకీ ఉన్నవారు' },
-  filterRDCompleted: { en: 'RD Completed', te: 'RD పూర్తయినవారు' },
-  filterRDUpToDate: { en: 'RD Up to date', te: 'RD క్రమంగా కడుతున్నవారు' },
+  filterActive: { en: 'Active Members', te: 'యాక్టివ్ గా ఉన్న సభ్యులు' },
+  filterAll: { en: 'All Members', te: 'అందరు (All)' },
+  filterLoanActive: { en: 'Active Loan Borrowers', te: 'అప్పు ఉన్నవారు' },
+  filterRDPending: { en: 'RD Pending Members', te: 'ఆర్డీ బాకీ ఉన్నవారు' },
+  filterRDCompletedFull: { en: 'RD Completed (Full Term)', te: 'ఆర్డీ పూర్తి నెలలకి పూర్తయినవారు' },
+  filterRDClosedMiddle: { en: 'RD Premature Closed', te: 'ఆర్డీ మధ్యంతరంగా పూర్తయినవారు' },
+  filterRDPaidUpToDate: { en: 'RD Paid Up-to-date', te: 'ఆర్డీ ఇప్పటివరకు కట్టినవారు' },
+  totalDueFromMembers: { en: 'Total Due from Members', te: 'సభ్యులు కట్టాల్సిన మొత్తం' },
   
   advancedFilters: { en: 'Filters', te: 'ఫిల్టర్స్' },
   dateFrom: { en: 'Date From', te: 'తేదీ (నుండి)' },

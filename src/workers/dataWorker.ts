@@ -188,7 +188,7 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
     const earnedBonus = rdCalc.totalInterest;
     totalBonusPayable += earnedBonus;
 
-    const isSettlementMode = m.status === 'closed' || m.status === 'matured';
+    const isSettlementMode = m.status === 'CLOSED' || m.status === 'MATURED';
     if (isSettlementMode) {
       const settlementPaid = m.settlementAmountPaid ? Number(m.settlementAmountPaid) : 0;
       totalSettlementPaid += settlementPaid;

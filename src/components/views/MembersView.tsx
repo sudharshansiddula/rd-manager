@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useI18n } from '../../locales/i18n';
 import { formatCurrency } from '../../utils';
 import { StorageService, storageEvents } from '../../engine/storage';
@@ -73,22 +73,32 @@ function calculateRdInterest(
   return { totalContribution, totalInterest, currentBalance: previousBalance };
 }
 
-interface MembersViewProps {
-  navParams?: any;
-  clearNavParams?: () => void;
+// Module-level cache to preserve search, filter, and selected member states across navigation/re-renders
+interface MembersViewStateCache {
+  searchTerm: string;
+  statusFilter: 'ACTIVE' | 'ALL' | 'LOAN_ACTIVE' | 'RD_PENDING' | 'RD_COMPLETED_FULL' | 'RD_CLOSED_MIDDLE' | 'RD_PAID_UP_TO_DATE';
+  showAdvancedFilters: boolean;
+  advancedFilters: {
+    dateFrom: string;
+    dateTo: string;
+    amountMin: string;
+    amountMax: string;
+    pendingMin: string;
+    pendingMax: string;
+    paidMin: string;
+    paidMax: string;
+    loanMin: string;
+    loanMax: string;
+  };
+  sortConfig: { key: string; direction: 'asc' | 'desc' } | null;
+  highlightedMemberId: string | null;
 }
 
-export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}) => {
-  const { t } = useI18n();
-  const [members, setMembers] = useState<Member[]>([]);
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'ALL' | 'LOAN_ACTIVE' | 'RD_PENDING' | 'RD_COMPLETED_FULL' | 'RD_CLOSED_MIDDLE' | 'RD_PAID_UP_TO_DATE'>('ACTIVE');
-  const [currentInterestRate, setCurrentInterestRate] = useState(0.00882434);
-  
-  // Advanced Filters
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [advancedFilters, setAdvancedFilters] = useState({
+const membersStateCache: MembersViewStateCache = {
+  searchTerm: '',
+  statusFilter: 'ACTIVE',
+  showAdvancedFilters: false,
+  advancedFilters: {
     dateFrom: '',
     dateTo: '',
     amountMin: '',
@@ -99,7 +109,27 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
     paidMax: '',
     loanMin: '',
     loanMax: ''
-  });
+  },
+  sortConfig: null,
+  highlightedMemberId: null,
+};
+
+interface MembersViewProps {
+  navParams?: any;
+  clearNavParams?: () => void;
+}
+
+export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}) => {
+  const { t } = useI18n();
+  const [members, setMembers] = useState<Member[]>([]);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [searchTerm, setSearchTerm] = useState(() => membersStateCache.searchTerm);
+  const [statusFilter, setStatusFilter] = useState<typeof membersStateCache.statusFilter>(() => membersStateCache.statusFilter);
+  const [currentInterestRate, setCurrentInterestRate] = useState(0.00882434);
+  
+  // Advanced Filters
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(() => membersStateCache.showAdvancedFilters);
+  const [advancedFilters, setAdvancedFilters] = useState(() => membersStateCache.advancedFilters);
   const isFilterActive = !!(
     advancedFilters.dateFrom || advancedFilters.dateTo || 
     advancedFilters.amountMin || advancedFilters.amountMax ||
@@ -109,7 +139,92 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
   );
   
   // Sorting State
-  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(() => membersStateCache.sortConfig);
+  const [highlightedMemberId, setHighlightedMemberId] = useState<string | null>(() => membersStateCache.highlightedMemberId);
+
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
+  const shouldScrollRef = useRef(false);
+
+  // Sync state changes to cache so they are preserved
+  useEffect(() => {
+    membersStateCache.searchTerm = searchTerm;
+  }, [searchTerm]);
+
+  useEffect(() => {
+    membersStateCache.statusFilter = statusFilter;
+  }, [statusFilter]);
+
+  useEffect(() => {
+    membersStateCache.showAdvancedFilters = showAdvancedFilters;
+  }, [showAdvancedFilters]);
+
+  useEffect(() => {
+    membersStateCache.advancedFilters = advancedFilters;
+  }, [advancedFilters]);
+
+  useEffect(() => {
+    membersStateCache.sortConfig = sortConfig;
+  }, [sortConfig]);
+
+  useEffect(() => {
+    membersStateCache.highlightedMemberId = highlightedMemberId;
+  }, [highlightedMemberId]);
+
+  const handleSelectMember = (member: Member) => {
+    setHighlightedMemberId(member.id);
+    membersStateCache.highlightedMemberId = member.id;
+    shouldScrollRef.current = true;
+    setSelectedMember(member);
+  };
+
+  const scrollToHighlightedMember = (memberId: string) => {
+    const tableWrapper = tableWrapperRef.current;
+    if (!tableWrapper) return false;
+    const rowEl = document.getElementById(`member-row-${memberId}`);
+    if (!rowEl) return false;
+
+    const theadEl = tableWrapper.querySelector('thead');
+    const headerHeight = theadEl ? theadEl.getBoundingClientRect().height : 45;
+
+    const wrapperRect = tableWrapper.getBoundingClientRect();
+    const rowRect = rowEl.getBoundingClientRect();
+
+    // Distance of the row top relative to the top of tableWrapper viewport
+    const relativeTop = rowRect.top - wrapperRect.top;
+    const targetScrollTop = tableWrapper.scrollTop + relativeTop - headerHeight;
+
+    tableWrapper.scrollTo({
+      top: Math.max(0, targetScrollTop),
+      behavior: 'smooth'
+    });
+
+    const contentScroll = tableWrapper.closest('.content-scroll');
+    if (contentScroll && contentScroll.scrollTop > 0) {
+      contentScroll.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    return true;
+  };
+
+  useEffect(() => {
+    if (!selectedMember && highlightedMemberId && shouldScrollRef.current) {
+      const timer1 = setTimeout(() => {
+        scrollToHighlightedMember(highlightedMemberId);
+      }, 60);
+
+      const timer2 = setTimeout(() => {
+        if (shouldScrollRef.current) {
+          scrollToHighlightedMember(highlightedMemberId);
+          shouldScrollRef.current = false;
+        }
+      }, 250);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
+    }
+  }, [selectedMember, highlightedMemberId]);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -143,6 +258,9 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
         m = StorageService.getMembers().find(x => x.id === navParams.memberId);
       }
       if (m) {
+        setHighlightedMemberId(m.id);
+        membersStateCache.highlightedMemberId = m.id;
+        shouldScrollRef.current = true;
         setSelectedMember(m);
       }
     }
@@ -390,13 +508,35 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       });
   }, [filtered]);
 
-  // Sorting
+  // Sorting with numeric/natural sorting support for A/c No and amounts
   const sortedAndFiltered = useMemo(() => {
     let sortableItems = [...filtered];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         let aValue: any = a[sortConfig.key as keyof typeof a];
         let bValue: any = b[sortConfig.key as keyof typeof b];
+
+        // Specific integer/numeric sorting for member account number
+        if (sortConfig.key === 'memberNumber') {
+          const numA = parseInt(aValue, 10);
+          const numB = parseInt(bValue, 10);
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return sortConfig.direction === 'asc' ? numA - numB : numB - numA;
+          }
+          return sortConfig.direction === 'asc'
+            ? String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' })
+            : String(bValue).localeCompare(String(aValue), undefined, { numeric: true, sensitivity: 'base' });
+        }
+
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+        }
+
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return sortConfig.direction === 'asc'
+            ? aValue.localeCompare(bValue, undefined, { numeric: true, sensitivity: 'base' })
+            : bValue.localeCompare(aValue, undefined, { numeric: true, sensitivity: 'base' });
+        }
         
         if (aValue < bValue) {
           return sortConfig.direction === 'asc' ? -1 : 1;
@@ -621,7 +761,17 @@ Do you still want to proceed creating an account for "${formData.name}"?`);
   };
 
   if (selectedMember) {
-    return <MemberProfileView member={selectedMember} onBack={() => { setSelectedMember(null); if (clearNavParams) clearNavParams(); }} targetMonthIndex={navParams?.monthIndex} />;
+    return (
+      <MemberProfileView 
+        member={selectedMember} 
+        onBack={() => { 
+          shouldScrollRef.current = true;
+          setSelectedMember(null); 
+          if (clearNavParams) clearNavParams(); 
+        }} 
+        targetMonthIndex={navParams?.monthIndex} 
+      />
+    );
   }
 
   return (
@@ -673,18 +823,22 @@ Do you still want to proceed creating an account for "${formData.name}"?`);
 
         <div className="summary-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="summary-label">టోటల్ సభ్యులు కట్టాల్సిన మొత్తం</span>
+            <span className="summary-label">{t('totalDueFromMembers')}</span>
             <Wallet size={16} color="var(--primary)" />
           </div>
           <span className="summary-value" style={{ color: 'var(--primary)' }}>₹{formatCurrency(stats.totalAmountToPay)}</span>
         </div>
 
-        <div className="summary-card">
+        <div className="summary-card" style={{ borderColor: stats.netProfitLossValue >= 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="summary-label">{t('netProfit')}</span>
+            <span className="summary-label" style={{ color: stats.netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
+              {stats.netProfitLossValue >= 0 ? t('netProfit') : t('netLoss')}
+            </span>
             <span style={{ fontSize: '14px' }}>{stats.netProfitLossValue >= 0 ? '📈' : '📉'}</span>
           </div>
-          <span className="summary-value" style={{ color: stats.netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)' }}>₹{formatCurrency(Math.abs(stats.netProfitLossValue))}</span>
+          <span className="summary-value" style={{ color: stats.netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
+            {stats.netProfitLossValue < 0 ? '-' : '+'}₹{formatCurrency(Math.abs(stats.netProfitLossValue))}
+          </span>
         </div>
               </div>
 
@@ -715,13 +869,13 @@ Do you still want to proceed creating an account for "${formData.name}"?`);
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
             >
-              <option value="ACTIVE">యాక్టివ్ గా ఉన్న సభ్యులు</option>
-              <option value="ALL">అందరు (All)</option>
-              <option value="LOAN_ACTIVE">అప్పు ఉన్నవారు</option>
-              <option value="RD_PENDING">ఆర్డీ బాకీ ఉన్నవారు</option>
-              <option value="RD_COMPLETED_FULL">ఆర్డీ పూర్తి నెలలకి పూర్తయినవారు</option>
-              <option value="RD_CLOSED_MIDDLE">ఆర్డీ మధ్యంతరంగా పూర్తయినవారు</option>
-              <option value="RD_PAID_UP_TO_DATE">ఆర్డీ ఇప్పటివరకు కట్టినవారు</option>
+              <option value="ACTIVE">{t('filterActive')}</option>
+              <option value="ALL">{t('filterAll')}</option>
+              <option value="LOAN_ACTIVE">{t('filterLoanActive')}</option>
+              <option value="RD_PENDING">{t('filterRDPending')}</option>
+              <option value="RD_COMPLETED_FULL">{t('filterRDCompletedFull')}</option>
+              <option value="RD_CLOSED_MIDDLE">{t('filterRDClosedMiddle')}</option>
+              <option value="RD_PAID_UP_TO_DATE">{t('filterRDPaidUpToDate')}</option>
             </select>
           <div style={{ position: 'relative' }}>
             <button 
@@ -814,7 +968,7 @@ Do you still want to proceed creating an account for "${formData.name}"?`);
       </div>
 
       {/* Members Table */}
-      <div className="table-wrapper" style={{ overflow: 'auto', flex: 1, minHeight: 0, maxHeight: 'none' }}>
+      <div ref={tableWrapperRef} className="table-wrapper" style={{ overflow: 'auto', flex: 1, minHeight: 0, maxHeight: 'none' }}>
         <table className="table" style={{ whiteSpace: 'nowrap' }}>
           <thead>
             <tr>
@@ -861,14 +1015,41 @@ Do you still want to proceed creating an account for "${formData.name}"?`);
                 </td>
               </tr>
             ) : (
-              sortedAndFiltered.map(member => (
+              sortedAndFiltered.map(member => {
+                const isHighlighted = member.id === highlightedMemberId;
+                return (
                   <tr 
                     key={member.id} 
+                    id={`member-row-${member.id}`}
                     style={{ cursor: 'pointer' }} 
-                    onClick={() => setSelectedMember(member)}
-                    className="hoverable-row"
+                    onClick={() => handleSelectMember(member)}
+                    className={`hoverable-row ${isHighlighted ? 'highlighted-row' : ''}`}
                   >
-                    <td><strong style={{ color: 'var(--primary)', fontSize: `calc(15px * var(--text-scale, 1))` }}>#{member.memberNumber}</strong></td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <strong style={{ 
+                          color: isHighlighted ? 'var(--primary-hover)' : 'var(--primary)', 
+                          fontSize: `calc(15px * var(--text-scale, 1))` 
+                        }}>
+                          #{member.memberNumber}
+                        </strong>
+                        {isHighlighted && (
+                          <span style={{
+                            fontSize: `calc(10px * var(--text-scale, 1))`,
+                            padding: '2px 7px',
+                            backgroundColor: 'var(--primary)',
+                            color: '#ffffff',
+                            borderRadius: '10px',
+                            fontWeight: 600,
+                            letterSpacing: '0.3px',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 1px 3px rgba(79, 70, 229, 0.3)'
+                          }}>
+                            {t('selected')}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))` }}>{member.name}</span>
@@ -966,11 +1147,12 @@ Do you still want to proceed creating an account for "${formData.name}"?`);
                       </span>
                     </td>
                   </tr>
-                )
-              )
+                );
+              })
             )}
           </tbody>
         </table>
+        <div style={{ height: '220px', pointerEvents: 'none' }} />
       </div>
 
       {/* Modal */}

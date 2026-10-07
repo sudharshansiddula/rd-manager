@@ -201,9 +201,53 @@ input, select {
   vertical-align: middle;
 }
 
+.hoverable-row {
+  transition: background-color 0.2s;
+}
+
 .hoverable-row:hover {
   background-color: #f8fafc;
+}
+
+.hoverable-row td {
   transition: background-color 0.2s;
+}
+
+.table tr {
+  scroll-margin-top: 52px;
+}
+
+@keyframes highlightPulse {
+  0% {
+    background-color: #dbeafe;
+  }
+  40% {
+    background-color: #c7d2fe;
+  }
+  100% {
+    background-color: #eef2ff;
+  }
+}
+
+.highlighted-row {
+  background-color: #eef2ff !important;
+  animation: highlightPulse 1.2s ease-out;
+}
+
+.highlighted-row td {
+  background-color: #eef2ff !important;
+}
+
+.highlighted-row td:first-child {
+  border-left: 4px solid var(--primary) !important;
+}
+
+.highlighted-row:hover {
+  background-color: #e0e7ff !important;
+}
+
+.highlighted-row:hover td {
+  background-color: #e0e7ff !important;
 }
 
 /* Form Controls */
