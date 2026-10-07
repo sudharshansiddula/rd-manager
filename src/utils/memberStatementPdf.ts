@@ -481,15 +481,15 @@ export async function shareMemberStatementPdf(data: MemberStatementData): Promis
 
 /**
  * Shares the member statement PDF file directly via WhatsApp.
- * On mobile/devices supporting Web Share API with files: triggers navigator.share with WhatsApp message text and attached PDF file.
- * Fallback (Desktop/unsupported browsers): Downloads the PDF file locally and opens WhatsApp Web/API directly for that contact number.
+ * 1. Downloads the PDF statement file to the computer/device so it's ready.
+ * 2. Directly redirects to the installed WhatsApp Desktop app (via whatsapp:// URI) for the member's contact.
  */
 export async function shareMemberStatementPdfToWhatsApp(
   data: MemberStatementData,
   mobile: string,
   messageText?: string
-): Promise<{ method: 'web-share' | 'whatsapp-web-fallback'; fileName: string }> {
-  const { pdf, file, fileName } = await createMemberStatementPdf(data);
+): Promise<{ method: 'whatsapp-desktop'; fileName: string }> {
+  const { pdf, fileName } = await createMemberStatementPdf(data);
   const isTe = data.lang !== 'en';
 
   const defaultShareText = isTe
@@ -497,29 +497,21 @@ export async function shareMemberStatementPdfToWhatsApp(
     : `${data.member.name}'s RD Chitti Statement.`;
   const shareText = messageText || defaultShareText;
 
-  // 1. If mobile browser supports Web Share with files, invoke it
-  if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({
-        files: [file],
-        title: `${data.member.name} - Statement`,
-        text: shareText
-      });
-      return { method: 'web-share', fileName };
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        return { method: 'web-share', fileName };
-      }
-      console.warn('Web share failed, proceeding to fallback:', err);
-    }
-  }
-
-  // 2. Fallback: Save PDF locally and open WhatsApp Web with that phone number
+  // 1. Immediately save/download the PDF file so it's ready on the computer
   pdf.save(fileName);
+
+  // 2. Format phone number
   const cleanMobile = mobile.replace(/\D/g, '');
   const phoneParam = cleanMobile.startsWith('91') ? cleanMobile : `91${cleanMobile}`;
-  const waUrl = `https://wa.me/${phoneParam}?text=${encodeURIComponent(shareText)}`;
-  window.open(waUrl, '_blank');
 
-  return { method: 'whatsapp-web-fallback', fileName };
+  // 3. Directly launch the installed WhatsApp Desktop application for that contact
+  const desktopAppUrl = `whatsapp://send?phone=${phoneParam}&text=${encodeURIComponent(shareText)}`;
+  
+  try {
+    window.location.href = desktopAppUrl;
+  } catch {
+    window.open(`https://web.whatsapp.com/send?phone=${phoneParam}&text=${encodeURIComponent(shareText)}`, '_blank');
+  }
+
+  return { method: 'whatsapp-desktop', fileName };
 }

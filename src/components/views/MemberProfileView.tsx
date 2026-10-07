@@ -4,7 +4,7 @@ import { useI18n } from '../../locales/i18n';
 import { formatCurrency, buildWhatsAppMessage } from '../../utils';
 import { StorageService, storageEvents } from '../../engine/storage';
 import { WhatsAppIcon } from '../WhatsAppIcon';
-import { downloadMemberStatementPdf, shareMemberStatementPdf, shareMemberStatementPdfToWhatsApp, type MemberStatementData } from '../../utils/memberStatementPdf';
+import { downloadMemberStatementPdf, shareMemberStatementPdf, type MemberStatementData } from '../../utils/memberStatementPdf';
 import type { Member, RDInstallment, Loan, LoanRepayment } from '../../types';
 
 interface MemberProfileProps {
@@ -577,7 +577,6 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
 
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isSharingPdf, setIsSharingPdf] = useState(false);
-  const [isWhatsAppPdfSharing, setIsWhatsAppPdfSharing] = useState(false);
 
   const whatsappUrl = `https://wa.me/91${member.mobile}?text=${encodeURIComponent(whatsappMsg)}`;
 
@@ -681,28 +680,6 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
       alert(lang === 'te' ? 'షేర్ చేయడంలో లోపం ఏర్పడింది.' : 'Failed to share PDF.');
     } finally {
       setIsSharingPdf(false);
-    }
-  };
-
-  const handleWhatsAppPdf = async () => {
-    if (!member.mobile) {
-      alert(lang === 'te' ? 'సభ్యుని మొబైల్ నంబర్ అందుబాటులో లేదు.' : 'Member mobile number is not available.');
-      return;
-    }
-    try {
-      setIsWhatsAppPdfSharing(true);
-      const data = getStatementData();
-      const res = await shareMemberStatementPdfToWhatsApp(data, member.mobile, whatsappMsg);
-      if (res.method === 'whatsapp-web-fallback') {
-        alert(lang === 'te'
-          ? `PDF కంప్యూటర్‌లో డౌన్‌లోడ్ చేయబడింది మరియు వాట్సాప్ చాట్ ఓపెన్ చేయబడింది. దయచేసి డౌన్‌లోడ్ అయిన PDFని వాట్సాప్‌లో అటాచ్ చేసి పంపండి.`
-          : `PDF downloaded and WhatsApp chat opened. Please attach the downloaded PDF and send.`);
-      }
-    } catch (err) {
-      console.error('Failed to share PDF via WhatsApp:', err);
-      alert(lang === 'te' ? 'వాట్సాప్‌లో షేర్ చేయడంలో లోపం ఏర్పడింది.' : 'Failed to share via WhatsApp.');
-    } finally {
-      setIsWhatsAppPdfSharing(false);
     }
   };
 
@@ -847,7 +824,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                     </div>
                   )}
 
-                  {/* 4-Compartment PDF Statement Action Bar */}
+                  {/* 3-Compartment PDF Statement Action Bar */}
                   <div style={{ display: 'inline-flex', alignItems: 'stretch', borderRadius: '8px', border: '1.5px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', backgroundColor: '#ffffff', height: '34px' }}>
                     <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
                     
@@ -857,7 +834,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                         display: 'flex',
                         alignItems: 'center',
                         gap: '5px',
-                        padding: '0 10px',
+                        padding: '0 11px',
                         backgroundColor: '#fee2e2',
                         color: '#b91c1c',
                         fontWeight: 800,
@@ -872,59 +849,28 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                       <span>PDF</span>
                     </div>
 
-                    {/* Compartment 2: WhatsApp Share Button (Sends PDF to Member's Mobile) */}
-                    <button
-                      onClick={handleWhatsAppPdf}
-                      disabled={isGeneratingPdf || isSharingPdf || isWhatsAppPdfSharing}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        padding: '0 11px',
-                        backgroundColor: '#f0fdf4',
-                        color: '#15803d',
-                        border: 'none',
-                        borderRight: '1.5px solid #bbf7d0',
-                        fontSize: `calc(12px * var(--text-scale, 1))`,
-                        fontWeight: 600,
-                        cursor: (isGeneratingPdf || isSharingPdf || isWhatsAppPdfSharing) ? 'wait' : 'pointer',
-                        transition: 'all 0.15s',
-                        outline: 'none'
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#dcfce7'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0fdf4'; }}
-                      title={lang === 'te' ? 'సభ్యుని మొబైల్ నంబర్‌కు PDF స్టేట్‌మెంట్ వాట్సాప్‌లో షేర్ చేయండి' : 'Share PDF statement with member on WhatsApp'}
-                    >
-                      {isWhatsAppPdfSharing ? (
-                        <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                      ) : (
-                        <WhatsAppIcon size={15} />
-                      )}
-                      <span>{isWhatsAppPdfSharing ? (lang === 'te' ? 'పంపుతోంది...' : 'Sending...') : 'PDF'}</span>
-                    </button>
-
-                    {/* Compartment 3: General Share Button (Web Share API) */}
+                    {/* Compartment 2: General Share Button (Web Share API - Shares actual PDF file) */}
                     <button
                       onClick={handleSharePdf}
-                      disabled={isGeneratingPdf || isSharingPdf || isWhatsAppPdfSharing}
+                      disabled={isGeneratingPdf || isSharingPdf}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '5px',
-                        padding: '0 11px',
+                        padding: '0 12px',
                         backgroundColor: '#e0e7ff',
                         color: '#4338ca',
                         border: 'none',
                         borderRight: '1.5px solid #c7d2fe',
                         fontSize: `calc(12px * var(--text-scale, 1))`,
                         fontWeight: 600,
-                        cursor: (isGeneratingPdf || isSharingPdf || isWhatsAppPdfSharing) ? 'wait' : 'pointer',
+                        cursor: (isGeneratingPdf || isSharingPdf) ? 'wait' : 'pointer',
                         transition: 'all 0.15s',
                         outline: 'none'
                       }}
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#c7d2fe'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#e0e7ff'; }}
-                      title={lang === 'te' ? 'PDF స్టేట్‌మెంట్‌ను ఎవరికైనా షేర్ చేయండి' : 'Share PDF statement'}
+                      title={lang === 'te' ? 'PDF స్టేట్‌మెంట్‌ను వాట్సాప్ లేదా ఇతర యాప్స్‌కు షేర్ చేయండి' : 'Share PDF statement via WhatsApp or other apps'}
                     >
                       {isSharingPdf ? (
                         <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
@@ -934,10 +880,10 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                       <span>{isSharingPdf ? (lang === 'te' ? 'షేర్ అవుతోంది...' : 'Sharing...') : (lang === 'te' ? 'షేర్' : 'Share')}</span>
                     </button>
 
-                    {/* Compartment 4: Download Button (Saves PDF to computer) */}
+                    {/* Compartment 3: Download Button (Saves PDF to computer) */}
                     <button
                       onClick={handleDownloadPdf}
-                      disabled={isGeneratingPdf || isSharingPdf || isWhatsAppPdfSharing}
+                      disabled={isGeneratingPdf || isSharingPdf}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -948,7 +894,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                         border: 'none',
                         fontSize: `calc(12px * var(--text-scale, 1))`,
                         fontWeight: 600,
-                        cursor: (isGeneratingPdf || isSharingPdf || isWhatsAppPdfSharing) ? 'wait' : 'pointer',
+                        cursor: (isGeneratingPdf || isSharingPdf) ? 'wait' : 'pointer',
                         transition: 'all 0.15s',
                         outline: 'none'
                       }}
