@@ -22,7 +22,9 @@ const defaultDb: DatabaseSchema = {
     defaultView: 'dashboard',
     lateFine: { period: 'MONTHLY', dueDate: 10, rate: 2 },
     whatsappTemplate: "నమస్కారం {name} గారు,\n\nఈ నెలకు సంబంధించిన మీ పెండింగ్ బకాయిల వివరాలు:\n\n*మొత్తం కట్టాల్సినది: ₹{totalDue}*\n\nవివరాలు:\n- RD పొదుపు బకాయి: ₹{rdDue}\n- అప్పు వడ్డీ బకాయి: ₹{loanInterestDue}\n- పెనాల్టీ / లేట్ ఫైన్: ₹{lateFee}\n\n(అప్పు అసలు బ్యాలెన్స్: ₹{loanPrincipal})\n\nదయచేసి వీలైనంత త్వరగా చెల్లించగలరు.\nధన్యవాదాలు.",
-    loanInterestRate: 2
+    loanInterestRate: 2,
+    zoomLevel: 100,
+    textSize: 100
   }
 };
 

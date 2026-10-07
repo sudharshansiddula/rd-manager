@@ -84,4 +84,6 @@ export interface AppSettings {
   };
   whatsappTemplate?: string;
   loanInterestRate: number;
+  zoomLevel?: number;
+  textSize?: number;
 }

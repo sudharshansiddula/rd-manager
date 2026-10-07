@@ -52,10 +52,10 @@ export const LoginView: React.FC = () => {
           </div>
         </div>
         
-        <h1 style={{ margin: '0 0 10px 0', fontSize: '24px', color: '#111827' }}>
+        <h1 style={{ margin: '0 0 10px 0', fontSize: `calc(24px * var(--text-scale, 1))`, color: '#111827' }}>
           {t('appTitle') || 'RD Manager'}
         </h1>
-        <p style={{ margin: '0 0 30px 0', color: '#6b7280', fontSize: '14px' }}>
+        <p style={{ margin: '0 0 30px 0', color: '#6b7280', fontSize: `calc(14px * var(--text-scale, 1))` }}>
           Secure Business Application. Please login to continue.
         </p>
 
@@ -66,7 +66,7 @@ export const LoginView: React.FC = () => {
             padding: '10px',
             borderRadius: '8px',
             marginBottom: '20px',
-            fontSize: '13px'
+            fontSize: `calc(13px * var(--text-scale, 1))`
           }}>
             {error}
           </div>
@@ -85,7 +85,7 @@ export const LoginView: React.FC = () => {
             color: '#fff',
             border: 'none',
             borderRadius: '8px',
-            fontSize: '16px',
+            fontSize: `calc(16px * var(--text-scale, 1))`,
             fontWeight: '600',
             cursor: loading ? 'not-allowed' : 'pointer',
             opacity: loading ? 0.7 : 1,

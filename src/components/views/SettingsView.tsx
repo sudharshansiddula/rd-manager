@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '../../locales/i18n';
-import { StorageService } from '../../engine/storage';
+import { StorageService, storageEvents } from '../../engine/storage';
 import type { AppSettings } from '../../types';
 import { Save, AlertCircle, Shield } from 'lucide-react';
 
@@ -9,8 +9,16 @@ export const SettingsView = () => {
   const [settings, setSettings] = useState<AppSettings | null>(null);
 
   useEffect(() => {
-    console.log("StorageService keys:", Object.keys(StorageService));
     setSettings(StorageService.getSettings());
+
+    const handleDbUpdate = () => {
+      setSettings(StorageService.getSettings());
+    };
+    storageEvents.addEventListener('db_updated', handleDbUpdate);
+    
+    return () => {
+      storageEvents.removeEventListener('db_updated', handleDbUpdate);
+    };
   }, []);
 
   const handleSettingsChange = (newSettings: AppSettings) => {
@@ -36,7 +44,7 @@ export const SettingsView = () => {
           <h4 style={{ margin: '0 0 16px 0', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             {t('defaultStartupScreen')}
           </h4>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+          <p style={{ fontSize: `calc(13px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '16px' }}>
             {t('chooseStartupScreen')}
           </p>
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -76,6 +84,117 @@ export const SettingsView = () => {
                 <span>{option.icon} {option.label}</span>
               </label>
             ))}
+          </div>
+        </div>
+        {/* Screen Zoom Section */}
+        <div style={{ backgroundColor: '#f8f9fa', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginTop: '24px' }}>
+          <h4 style={{ margin: '0 0 16px 0', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            Screen Zoom
+          </h4>
+          <p style={{ fontSize: `calc(13px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '16px' }}>
+            Adjust the application zoom level to make elements larger or smaller.
+          </p>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: `calc(12px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-muted)' }}>A</span>
+              <input 
+                type="range" 
+                min="50" 
+                max="200" 
+                step="10"
+                value={settings.zoomLevel || 100}
+                onChange={(e) => {
+                  const newSettings = { ...settings, zoomLevel: Number(e.target.value) };
+                  setSettings(newSettings);
+                  StorageService.saveSettings(newSettings);
+                }}
+                onKeyDown={(e) => {
+                  let newZoom = settings.zoomLevel || 100;
+                  if (e.key === 'ArrowRight') newZoom = Math.min(200, newZoom + 10);
+                  if (e.key === 'ArrowLeft') newZoom = Math.max(50, newZoom - 10);
+                  if (newZoom !== settings.zoomLevel) {
+                    const newSettings = { ...settings, zoomLevel: newZoom };
+                    setSettings(newSettings);
+                    StorageService.saveSettings(newSettings);
+                  }
+                }}
+                style={{ width: '150px', accentColor: 'var(--primary)' }}
+              />
+              <span style={{ fontSize: `calc(18px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-main)' }}>A</span>
+            </div>
+            
+            <div style={{ fontWeight: 600, color: 'var(--primary)', width: '40px' }}>
+              {settings.zoomLevel || 100}%
+            </div>
+            
+            <button 
+              className="btn"
+              style={{ background: '#fff', border: '1px solid var(--border)', fontSize: `calc(12px * var(--text-scale, 1))`, padding: '6px 12px' }}
+              onClick={() => {
+                const newSettings = { ...settings, zoomLevel: 100 };
+                handleSettingsChange(newSettings);
+              }}
+            >
+              Reset to Default
+            </button>
+          </div>
+        </div>
+
+        {/* Text Size Section */}
+        <div style={{ backgroundColor: '#f8f9fa', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginTop: '24px' }}>
+          <h4 style={{ margin: '0 0 16px 0', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            Text Size
+          </h4>
+          <p style={{ fontSize: `calc(13px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '16px', lineHeight: '1.5' }}>
+            Increase or decrease the size of text and labels across the application without affecting the overall layout. This works like a percentage zoom specifically for text (e.g. 110%, 120%).
+          </p>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: `calc(12px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-muted)' }}>A</span>
+              <input 
+                type="range" 
+                min="80" 
+                max="200" 
+                step="10"
+                value={settings.textSize || 100}
+                onChange={(e) => {
+                  const newSettings = { ...settings, textSize: Number(e.target.value) };
+                  setSettings(newSettings); // Local UI update immediately
+                  // We also save to storage immediately. For range inputs, React 18 handles this fine if we don't drop updates.
+                  StorageService.saveSettings(newSettings);
+                }}
+                onKeyDown={(e) => {
+                  // Explicit keyboard support for left/right arrows if native fails
+                  let newSize = settings.textSize || 100;
+                  if (e.key === 'ArrowRight') newSize = Math.min(200, newSize + 10);
+                  if (e.key === 'ArrowLeft') newSize = Math.max(80, newSize - 10);
+                  if (newSize !== settings.textSize) {
+                    const newSettings = { ...settings, textSize: newSize };
+                    setSettings(newSettings);
+                    StorageService.saveSettings(newSettings);
+                  }
+                }}
+                style={{ width: '150px', accentColor: 'var(--primary)' }}
+              />
+              <span style={{ fontSize: `calc(18px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-main)' }}>A</span>
+            </div>
+            
+            <div style={{ fontWeight: 600, color: 'var(--primary)', width: '40px' }}>
+              {settings.textSize || 100}%
+            </div>
+            
+            <button 
+              className="btn"
+              style={{ background: '#fff', border: '1px solid var(--border)', fontSize: `calc(12px * var(--text-scale, 1))`, padding: '6px 12px' }}
+              onClick={() => {
+                const newSettings = { ...settings, textSize: 100 };
+                handleSettingsChange(newSettings);
+              }}
+            >
+              Reset to Default
+            </button>
           </div>
         </div>
       </div>
@@ -172,7 +291,7 @@ export const SettingsView = () => {
             </h4>
             <button
               className="btn btn-secondary"
-              style={{ fontSize: '12px', padding: '4px 12px', background: '#fff', border: '1px solid var(--border)', borderRadius: '4px' }}
+              style={{ fontSize: `calc(12px * var(--text-scale, 1))`, padding: '4px 12px', background: '#fff', border: '1px solid var(--border)', borderRadius: '4px' }}
               onClick={() => {
                 if (window.confirm(t('resetConfirm'))) {
                   const defaultTemplate = t('whatsappDueMessage');
@@ -183,7 +302,7 @@ export const SettingsView = () => {
               {t('resetToDefault')}
             </button>
           </div>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: '1.5' }}>
+          <p style={{ fontSize: `calc(13px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '16px', lineHeight: '1.5' }}>
             {t('whatsappMsgCustomize')}<br />
             <code style={{ background: '#e9ecef', padding: '2px 6px', borderRadius: '4px', margin: '0 4px' }}>{`{name}`}</code>
             <code style={{ background: '#e9ecef', padding: '2px 6px', borderRadius: '4px', margin: '0 4px' }}>{`{totalDue}`}</code>
@@ -198,7 +317,7 @@ export const SettingsView = () => {
             <textarea
               className="input"
               rows={10}
-              style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '14px', resize: 'vertical' }}
+              style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: `calc(14px * var(--text-scale, 1))`, resize: 'vertical' }}
               value={settings.whatsappTemplate}
               onChange={(e) => handleSettingsChange({
                 ...settings,
@@ -211,10 +330,10 @@ export const SettingsView = () => {
 
       {/* Advanced / Data Import Section */}
       <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', marginTop: '24px', border: '1px solid var(--danger)' }}>
-        <h3 style={{ margin: '0 0 16px 0', color: 'var(--danger)', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h3 style={{ margin: '0 0 16px 0', color: 'var(--danger)', fontSize: `calc(16px * var(--text-scale, 1))`, display: 'flex', alignItems: 'center', gap: '8px' }}>
           Advanced (Data Import)
         </h3>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: '1.5' }}>
+        <p style={{ fontSize: `calc(13px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '16px', lineHeight: '1.5' }}>
           Upload a <strong>JSON backup file</strong> to replace your entire database. 
           <br /><strong>WARNING:</strong> This action will overwrite all existing data in Firebase and cannot be undone!
         </p>

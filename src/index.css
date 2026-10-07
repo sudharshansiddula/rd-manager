@@ -23,7 +23,7 @@ body {
   background-color: var(--bg-app);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale, 1));
 }
 
 button {
@@ -33,7 +33,7 @@ button {
 
 input, select {
   font-family: inherit;
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale, 1));
 }
 
 /* Layout Utilities */
@@ -53,7 +53,7 @@ input, select {
 
 .sidebar-header {
   padding: 24px 20px;
-  font-size: 18px;
+  font-size: calc(18px * var(--text-scale, 1));
   font-weight: 800;
   border-bottom: 1px solid rgba(255,255,255,0.1);
   display: flex;
@@ -110,7 +110,7 @@ input, select {
   align-items: center;
   padding: 0 24px;
   font-weight: 700;
-  font-size: 18px;
+  font-size: calc(18px * var(--text-scale, 1));
 }
 
 .content-scroll {
@@ -149,13 +149,13 @@ input, select {
 }
 
 .summary-label {
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1));
   color: var(--text-muted);
   font-weight: 600;
 }
 
 .summary-value {
-  font-size: 20px;
+  font-size: calc(20px * var(--text-scale, 1));
   font-weight: 700;
   color: var(--text-main);
 }
@@ -181,7 +181,7 @@ input, select {
   background: #f1f5f9;
   padding: 12px 16px;
   text-align: left;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1));
   font-weight: 600;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
@@ -277,7 +277,7 @@ input, select {
   justify-content: space-between;
   align-items: center;
   font-weight: 700;
-  font-size: 16px;
+  font-size: calc(16px * var(--text-scale, 1));
 }
 
 .modal-body {
@@ -301,7 +301,7 @@ input, select {
 
 .form-group label {
   display: block;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1));
   font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 6px;

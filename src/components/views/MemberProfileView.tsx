@@ -615,8 +615,8 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             </button>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '24px', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
-                  {member.name} <span style={{ fontSize: '16px', color: 'var(--primary)' }}>(#{member.memberNumber})</span>
+                <h2 style={{ fontSize: `calc(24px * var(--text-scale, 1))`, fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
+                  {member.name} <span style={{ fontSize: `calc(16px * var(--text-scale, 1))`, color: 'var(--primary)' }}>(#{member.memberNumber})</span>
                 </h2>
                 <div style={{ display: 'flex', gap: '4px' }}>
                   <button onClick={() => {
@@ -660,14 +660,14 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: closeDateStr ? '#fff0f0' : '#f8f9fa', border: `1px solid ${closeDateStr ? 'var(--danger)' : 'var(--border)'}`, borderRadius: '8px' }}>
               {closeDateStr ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--danger)' }}>Closed on:</span>
+                  <span style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--danger)' }}>Closed on:</span>
                   <input
                     type="month"
                     value={closeDateStr}
                     min={minMonth}
                     max={maxMonth}
                     onChange={e => setCloseDateStr(e.target.value)}
-                    style={{ padding: '4px 8px', border: '1px solid var(--danger)', borderRadius: '4px', fontSize: '13px' }}
+                    style={{ padding: '4px 8px', border: '1px solid var(--danger)', borderRadius: '4px', fontSize: `calc(13px * var(--text-scale, 1))` }}
                   />
                   <button onClick={() => setCloseDateStr(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                     <X size={16} />
@@ -680,7 +680,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                     setCloseDateStr(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
                   }}
                   className="btn"
-                  style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', background: '#fff', border: '1px solid var(--border)', padding: '6px 12px' }}
+                  style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-main)', background: '#fff', border: '1px solid var(--border)', padding: '6px 12px' }}
                 >
                   {t('prematureClose')}
                 </button>
@@ -720,27 +720,27 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
           <div className="card" style={{ flex: '1 1 300px', padding: '16px', borderLeft: '4px solid var(--primary)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--primary)' }}>
               <PiggyBank size={18} />
-              <strong style={{ fontSize: '14px' }}>{t('rdDetails')}</strong>
+              <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('rdDetails')}</strong>
               <div title={t('rdTooltip')} style={{ cursor: 'help', display: 'flex', marginLeft: 'auto' }}>
                 <Info size={16} color="var(--primary)" />
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('monthlySavingDash')}</div>
-                <div style={{ fontWeight: 600, fontSize: '13px' }}>₹{formatCurrency(member.monthlyContribution)}</div>
+                <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('monthlySavingDash')}</div>
+                <div style={{ fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))` }}>₹{formatCurrency(member.monthlyContribution)}</div>
               </div>
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('monthsPaidDash')}</div>
-                <div style={{ fontWeight: 600, fontSize: '13px' }}>{paidMonthsCount} / {member.tenureMonths}</div>
+                <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('monthsPaidDash')}</div>
+                <div style={{ fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))` }}>{paidMonthsCount} / {member.tenureMonths}</div>
               </div>
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('savedSoFar')}</div>
-                <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--success)' }}>₹{formatCurrency(totalSaved)}</div>
+                <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('savedSoFar')}</div>
+                <div style={{ fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, color: 'var(--success)' }}>₹{formatCurrency(totalSaved)}</div>
               </div>
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('bonusEarned')}</div>
-                <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('bonusEarned')}</div>
+                <div style={{ fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   + ₹{formatCurrency(earnedBonus)}
                   <button onClick={() => setShowCalculationModal(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: 'var(--text-muted)' }}>
                     <Info size={14} />
@@ -748,9 +748,9 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                 </div>
               </div>
               <div style={{ gridColumn: '1 / span 2', paddingTop: '8px', borderTop: '1px dashed var(--border)' }}>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('currentValueVsMaturity')}</div>
-                <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--primary)' }}>
-                  ₹{formatCurrency(Math.round(activeSavingsAmount + earnedBonus))} <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>/ ₹{formatCurrency(member.expectedMaturityAmount)}</span>
+                <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('currentValueVsMaturity')}</div>
+                <div style={{ fontWeight: 700, fontSize: `calc(16px * var(--text-scale, 1))`, color: 'var(--primary)' }}>
+                  ₹{formatCurrency(Math.round(activeSavingsAmount + earnedBonus))} <span style={{ fontSize: `calc(13px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 500 }}>/ ₹{formatCurrency(member.expectedMaturityAmount)}</span>
                 </div>
               </div>
             </div>
@@ -760,27 +760,27 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
           <div className="card" style={{ flex: '1 1 300px', padding: '16px', borderLeft: '4px solid var(--danger)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--danger)' }}>
               <Wallet size={18} />
-              <strong style={{ fontSize: '14px' }}>{t('loanDetails')}</strong>
+              <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('loanDetails')}</strong>
               <div title={t('loanTooltip')} style={{ cursor: 'help', display: 'flex', marginLeft: 'auto' }}>
                 <Info size={16} color="var(--danger)" />
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('remainingPrincipal')}</div>
-                <div style={{ fontWeight: 600, fontSize: '14px', color: currentLoanBal > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(currentLoanBal)}</div>
+                <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('remainingPrincipal')}</div>
+                <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: currentLoanBal > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(currentLoanBal)}</div>
               </div>
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('interestDueDash')}</div>
-                <div style={{ fontWeight: 600, fontSize: '14px', color: remainingInterestDue > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(remainingInterestDue)}</div>
+                <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('interestDueDash')}</div>
+                <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: remainingInterestDue > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(remainingInterestDue)}</div>
               </div>
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('lblLateFee')}</div>
-                <div style={{ fontWeight: 600, fontSize: '14px', color: calculatedLateFee > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(calculatedLateFee)}</div>
+                <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('lblLateFee')}</div>
+                <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: calculatedLateFee > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(calculatedLateFee)}</div>
               </div>
               <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: '12px' }}>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('totalAmountToPay')}</div>
-                <div style={{ fontWeight: 700, fontSize: '15px', color: (currentLoanBal + remainingInterestDue + calculatedLateFee) > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(currentLoanBal + remainingInterestDue + calculatedLateFee)}</div>
+                <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('totalAmountToPay')}</div>
+                <div style={{ fontWeight: 700, fontSize: `calc(15px * var(--text-scale, 1))`, color: (currentLoanBal + remainingInterestDue + calculatedLateFee) > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(currentLoanBal + remainingInterestDue + calculatedLateFee)}</div>
               </div>
             </div>
           </div>
@@ -790,14 +790,14 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             <div className="card" style={{ flex: '1 1 300px', padding: '16px', borderLeft: '4px solid var(--danger)', backgroundColor: '#fff0f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--danger)' }}>
                 <AlertCircle size={18} />
-                <strong style={{ fontSize: '14px' }}>{t('finalSettlement')} {closeDateStr ? '(Premature)' : '(Completed)'}</strong>
+                <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('finalSettlement')} {closeDateStr ? '(Premature)' : '(Completed)'}</strong>
                 <div title={t('settlementTooltip')} style={{ cursor: 'help', display: 'flex', marginLeft: 'auto' }}>
                   <Info size={16} color="var(--danger)" />
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>
                     {t('totalAmountToPayMember')}
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginLeft: '6px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', opacity: includeSavings ? 1 : 0.5 }}>
@@ -810,15 +810,15 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                       </label>
                     </div>
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: '15px', color: (includeSavings || includeBonus) ? 'var(--success)' : 'var(--text-muted)' }}>
+                  <div style={{ fontWeight: 600, fontSize: `calc(15px * var(--text-scale, 1))`, color: (includeSavings || includeBonus) ? 'var(--success)' : 'var(--text-muted)' }}>
                     ₹{formatCurrency(totalToPayMember)}
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', fontWeight: 500 }}>
+                  <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginTop: '2px', fontWeight: 500 }}>
                     (₹{formatCurrency(activeSavingsAmount)} + ₹{formatCurrency(earnedBonus)})
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>
                     {t('totalDeductions')}
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginLeft: '6px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', opacity: includeLoan ? 1 : 0.5 }}>
@@ -835,31 +835,31 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                       </label>
                     </div>
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: '15px', color: (includeLoan || includeInterest || includeLateFee) ? 'var(--danger)' : 'var(--text-muted)' }}>
+                  <div style={{ fontWeight: 600, fontSize: `calc(15px * var(--text-scale, 1))`, color: (includeLoan || includeInterest || includeLateFee) ? 'var(--danger)' : 'var(--text-muted)' }}>
                     ₹{formatCurrency(totalDeductions)}
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', fontWeight: 500 }}>
+                  <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginTop: '2px', fontWeight: 500 }}>
                     (₹{formatCurrency(currentLoanBal)} + ₹{formatCurrency(remainingInterestDue)} + ₹{formatCurrency(calculatedLateFee)})
                   </div>
                 </div>
                 <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: '16px' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('netSettlement')}</div>
-                  <div style={{ fontWeight: 700, fontSize: '20px', color: netSettlement >= 0 ? 'var(--primary)' : 'var(--danger)' }}>
+                  <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('netSettlement')}</div>
+                  <div style={{ fontWeight: 700, fontSize: `calc(20px * var(--text-scale, 1))`, color: netSettlement >= 0 ? 'var(--primary)' : 'var(--danger)' }}>
                     {netSettlement < 0 ? '-' : ''}₹{formatCurrency(Math.abs(netSettlement))}
                   </div>
-                  <div style={{ fontSize: '12px', marginTop: '4px', color: netSettlement >= 0 ? 'var(--primary)' : 'var(--danger)', fontWeight: 500 }}>
+                  <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, marginTop: '4px', color: netSettlement >= 0 ? 'var(--primary)' : 'var(--danger)', fontWeight: 500 }}>
                     {netSettlement >= 0 ? t('wePay') : t('memberPays')}
                   </div>
                 </div>
               </div>
               
               <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed var(--danger)' }}>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--danger)', marginBottom: '8px' }}>
+                <div style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--danger)', marginBottom: '8px' }}>
                   {t('settlementPaymentDetails')}
                 </div>
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>{t('datePaid')}</div>
+                    <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px' }}>{t('datePaid')}</div>
                     <input 
                       type="date" 
                       className="input-compact" 
@@ -868,7 +868,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                     />
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                    <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px' }}>
                       {netSettlement >= 0 ? t('amountPaidToMember') : t('amountPaidToUs')}
                     </div>
                     <input 
@@ -886,22 +886,22 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             <div className="card" style={{ flex: '1 1 300px', padding: '16px', borderLeft: '4px solid var(--warning)', backgroundColor: '#fffdf5' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#b28900' }}>
                 <AlertCircle size={18} />
-                <strong style={{ fontSize: '14px' }}>{t('currentDues')} ({t('upTo')} {now.toLocaleString('en-US', { month: 'short', year: 'numeric' })})</strong>
+                <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('currentDues')} ({t('upTo')} {now.toLocaleString('en-US', { month: 'short', year: 'numeric' })})</strong>
                 <div title={t('duesTooltip')} style={{ cursor: 'help', display: 'flex', marginLeft: 'auto' }}>
                   <Info size={16} color="#b28900" />
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '12px' }}>
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('pendingRDM')} ({pendingRDMonths} {t('months')})</div>
-                  <div style={{ fontWeight: 600, fontSize: '14px' }}>₹{formatCurrency(pendingRDAmount)}</div>
+                  <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('pendingRDM')} ({pendingRDMonths} {t('months')})</div>
+                  <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))` }}>₹{formatCurrency(pendingRDAmount)}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('pendingInterest')}</div>
-                  <div style={{ fontWeight: 600, fontSize: '14px' }}>₹{formatCurrency(remainingInterestDue)}</div>
+                  <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('pendingInterest')}</div>
+                  <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))` }}>₹{formatCurrency(remainingInterestDue)}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     {t('lateFee')}
                     <button 
                       onClick={() => setShowLateFeeTooltip(true)} 
@@ -910,11 +910,11 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                       <Info size={12} />
                     </button>
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: '14px' }}>₹{formatCurrency(calculatedLateFee)}</div>
+                  <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))` }}>₹{formatCurrency(calculatedLateFee)}</div>
                 </div>
                 <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: '16px' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('totalAmountToPay')}</div>
-                  <div style={{ fontWeight: 700, fontSize: '18px', color: 'var(--danger)' }}>₹{formatCurrency(totalAmountDueThisMonth)}</div>
+                  <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('totalAmountToPay')}</div>
+                  <div style={{ fontWeight: 700, fontSize: `calc(18px * var(--text-scale, 1))`, color: 'var(--danger)' }}>₹{formatCurrency(totalAmountDueThisMonth)}</div>
                 </div>
               </div>
             </div>
@@ -924,7 +924,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
           <div className="card" style={{ flex: '1 1 300px', padding: '16px', borderLeft: `4px solid ${netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)'}`, backgroundColor: netProfitLossValue >= 0 ? '#f6ffed' : '#fff0f0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)' }}>
               <Wallet size={18} />
-              <strong style={{ fontSize: '14px' }}>{t('transactionsCardTitle')}</strong>
+              <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('transactionsCardTitle')}</strong>
               <div title={isSettlementMode ? t('transactionsCardTooltipSettled') : t('transactionsCardTooltipActive')} style={{ cursor: 'help', display: 'flex', marginLeft: 'auto' }}>
                 <Info size={16} color={netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)'} />
               </div>
@@ -933,35 +933,35 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
               {!isSettlementMode ? (
                 <>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('totalEarningsReceived')}</div>
-                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-main)' }}>
+                    <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('totalEarningsReceived')}</div>
+                    <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: 'var(--text-main)' }}>
                       ₹{formatCurrency(totalEarningsReceived)}
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
+                      <div style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
                         (₹{formatCurrency(sumInterestPaidDash)} + ₹{formatCurrency(sumLateFeeDash)})
                       </div>
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('bonusGiven')}</div>
-                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-main)' }}>₹{formatCurrency(earnedBonus)}</div>
+                    <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('bonusGiven')}</div>
+                    <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: 'var(--text-main)' }}>₹{formatCurrency(earnedBonus)}</div>
                   </div>
                 </>
               ) : (
                 <>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('totalCashReceivedPL')}</div>
-                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-main)' }}>
+                    <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('totalCashReceivedPL')}</div>
+                    <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: 'var(--text-main)' }}>
                       ₹{formatCurrency(totalCashReceived)}
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
+                      <div style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
                         (RD+Repayments+Int+Fine)
                       </div>
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('totalCashGivenPL')}</div>
-                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-main)' }}>
+                    <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('totalCashGivenPL')}</div>
+                    <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: 'var(--text-main)' }}>
                       ₹{formatCurrency(totalCashGiven)}
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
+                      <div style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
                         ({sumLoanDisbursed ? 'Loan + ' : ''}Settlement)
                       </div>
                     </div>
@@ -969,8 +969,8 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                 </>
               )}
               <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: '12px' }}>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{netProfitLossValue >= 0 ? t('netProfit') : t('netLoss')}</div>
-                <div style={{ fontWeight: 700, fontSize: '18px', color: netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 600 }}>{netProfitLossValue >= 0 ? t('netProfit') : t('netLoss')}</div>
+                <div style={{ fontWeight: 700, fontSize: `calc(18px * var(--text-scale, 1))`, color: netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)' }}>
                   {netProfitLossValue < 0 ? '-' : '+'}₹{formatCurrency(Math.abs(netProfitLossValue))}
                 </div>
               </div>
@@ -993,45 +993,45 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
         return (
           <div className="profile-table-container" style={{ display: 'flex', flexDirection: 'column' }}>
             <div className="table-wrapper" style={{ flex: 1, maxHeight: 'none' }}>
-              <table className="table" style={{ fontSize: '13px' }}>
+              <table className="table" style={{ fontSize: `calc(13px * var(--text-scale, 1))` }}>
                 <thead>
                   <tr>
                     <th style={{ width: '60px' }}>
                       {t('month')}
-                      <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '4px', fontWeight: 700 }}>{paidMonthsCount}</div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--primary)', marginTop: '4px', fontWeight: 700 }}>{paidMonthsCount}</div>
                     </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>
                       {t('monthlyContribution')}
-                      <div style={{ fontSize: '11px', color: 'var(--success)', marginTop: '4px', fontWeight: 700 }}>(₹{formatCurrency(totalSaved)})</div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--success)', marginTop: '4px', fontWeight: 700 }}>(₹{formatCurrency(totalSaved)})</div>
                     </th>
                     <th style={{ width: '150px', wordWrap: 'break-word' }}>
                       {t('depositorDetails')}
                     </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>
                       {t('loanOut')} (₹)
-                      <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>{sumLoanDisbursed > 0 ? `(₹${formatCurrency(sumLoanDisbursed)})` : '-'}</div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>{sumLoanDisbursed > 0 ? `(₹${formatCurrency(sumLoanDisbursed)})` : '-'}</div>
                     </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>
                       {t('principalRepayment')}
-                      <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '4px', fontWeight: 700 }}>{sumPrincipalPaid > 0 ? `(₹${formatCurrency(sumPrincipalPaid)})` : '-'}</div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--primary)', marginTop: '4px', fontWeight: 700 }}>{sumPrincipalPaid > 0 ? `(₹${formatCurrency(sumPrincipalPaid)})` : '-'}</div>
                     </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>
                       {t('interestOnLoan')}
-                      <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '4px', fontWeight: 700 }}>{sumInterestPaid > 0 ? `(₹${formatCurrency(sumInterestPaid)})` : '-'}</div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--primary)', marginTop: '4px', fontWeight: 700 }}>{sumInterestPaid > 0 ? `(₹${formatCurrency(sumInterestPaid)})` : '-'}</div>
                     </th>
                     <th style={{ textAlign: 'right', width: '70px', wordWrap: 'break-word' }}>
                       {t('lateFee')}
-                      <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>{sumLateFee > 0 ? `(₹${formatCurrency(sumLateFee)})` : '-'}</div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>{sumLateFee > 0 ? `(₹${formatCurrency(sumLateFee)})` : '-'}</div>
                     </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>
                       {t('totalPaid')}
-                      <div style={{ fontSize: '11px', color: 'var(--success)', marginTop: '4px', fontWeight: 700 }}>(₹{formatCurrency(sumTotalPaid)})</div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--success)', marginTop: '4px', fontWeight: 700 }}>(₹{formatCurrency(sumTotalPaid)})</div>
                     </th>
                     <th style={{ textAlign: 'right', width: '90px', wordWrap: 'break-word' }}>
                       {t('remainingLoan')}
-                      <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>{currentLoanBal > 0 ? `(₹${formatCurrency(currentLoanBal)})` : '-'}</div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>{currentLoanBal > 0 ? `(₹${formatCurrency(currentLoanBal)})` : '-'}</div>
                     </th>
-                    <th style={{ width: '70px', fontSize: '11px', textAlign: 'center', lineHeight: '1.2' }}>{t('updatedAt')}</th>
+                    <th style={{ width: '70px', fontSize: `calc(11px * var(--text-scale, 1))`, textAlign: 'center', lineHeight: '1.2' }}>{t('updatedAt')}</th>
                     <th style={{ width: '100px', textAlign: 'center', verticalAlign: 'top' }}>{t('actions')}</th>
                   </tr>
                 </thead>
@@ -1055,9 +1055,9 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                         <td>
                           <div style={{ fontWeight: 600 }}>
                             {r.monthStr}
-                            {isCurrentMonth && <span style={{ fontSize: '10px', color: 'var(--primary)', marginLeft: '6px', padding: '2px 6px', background: '#e3f2fd', borderRadius: '10px' }}>Current</span>}
+                            {isCurrentMonth && <span style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--primary)', marginLeft: '6px', padding: '2px 6px', background: '#e3f2fd', borderRadius: '10px' }}>Current</span>}
                           </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>M-{r.monthIndex}</div>
+                          <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>M-{r.monthIndex}</div>
                         </td>
 
                         {isEditing ? (
@@ -1070,7 +1070,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                                     const due = getPendingRDAmtForMonth(r.monthIndex, isEditing, rowEdits.rdAmount);
                                     if (due > 0) setRowEdits({ ...rowEdits, rdAmount: rowEdits.rdAmount + due });
                                   }}
-                                  style={{ fontSize: '10px', color: 'var(--warning)', marginTop: '4px', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                                  style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--warning)', marginTop: '4px', whiteSpace: 'nowrap', cursor: 'pointer' }}
                                   title="Click to autofill"
                                 >
                                   Due: ₹{getPendingRDAmtForMonth(r.monthIndex, isEditing, rowEdits.rdAmount)}
@@ -1099,7 +1099,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                                     const due = r.expectedInterest - rowEdits.interestPaid;
                                     if (due > 0) setRowEdits({ ...rowEdits, interestPaid: rowEdits.interestPaid + due });
                                   }}
-                                  style={{ fontSize: '11px', color: 'var(--warning)', marginTop: '2px', cursor: 'pointer' }}
+                                  style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--warning)', marginTop: '2px', cursor: 'pointer' }}
                                   title="Click to autofill"
                                 >
                                   Due: ₹{formatCurrency(r.expectedInterest - rowEdits.interestPaid)}
@@ -1114,7 +1114,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                                     const due = getLateFeeHintForMonth(r.monthIndex);
                                     if (due > 0) setRowEdits({ ...rowEdits, lateFee: due });
                                   }}
-                                  style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                                  style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginTop: '4px', whiteSpace: 'nowrap', cursor: 'pointer' }}
                                   title="Click to autofill"
                                 >
                                   Due: ₹{getLateFeeHintForMonth(r.monthIndex)}
@@ -1123,7 +1123,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                             </td>
                             <td style={{ fontWeight: 600, textAlign: 'right' }}>₹{formatCurrency(rowEdits.rdAmount + rowEdits.principalPaid + rowEdits.interestPaid + rowEdits.lateFee)}</td>
                             <td style={{ fontWeight: 600, textAlign: 'right', color: r.loanBalAfter > 0 ? 'inherit' : 'var(--text-muted)' }}>{r.loanBalAfter > 0 ? `₹${formatCurrency(r.loanBalAfter)}` : '-'}</td>
-                            <td style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: '1.2' }}>
+                            <td style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--text-muted)', textAlign: 'center', lineHeight: '1.2' }}>
                               {r.updatedAt ? (
                                 <>
                                   <div style={{ whiteSpace: 'nowrap' }}>{new Date(r.updatedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
@@ -1145,14 +1145,14 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                         ) : (
                           <>
                             <td style={{ textAlign: 'right', color: r.rdAmount > 0 ? 'var(--success)' : 'var(--text-muted)' }}>{r.rdAmount > 0 ? `₹${formatCurrency(r.rdAmount)}` : '-'}</td>
-                            <td style={{ textAlign: 'left', fontSize: '11px', color: 'var(--text-muted)' }}>{r.depositorDetails || '-'}</td>
+                            <td style={{ textAlign: 'left', fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{r.depositorDetails || '-'}</td>
                             <td style={{ textAlign: 'right', color: r.loanDisbursed > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>{r.loanDisbursed > 0 ? `₹${formatCurrency(r.loanDisbursed)}` : '-'}</td>
                             <td style={{ textAlign: 'right', color: r.principalPaid > 0 ? 'var(--primary)' : 'var(--text-muted)' }}>{r.principalPaid > 0 ? `₹${formatCurrency(r.principalPaid)}` : '-'}</td>
                             <td style={{ textAlign: 'right', color: r.interestPaid > 0 ? 'inherit' : 'var(--text-muted)' }}>{r.interestPaid > 0 ? `₹${formatCurrency(r.interestPaid)}` : '-'}</td>
                             <td style={{ textAlign: 'right', color: r.lateFee > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>{r.lateFee > 0 ? `₹${formatCurrency(r.lateFee)}` : '-'}</td>
                             <td style={{ textAlign: 'right', fontWeight: 600, color: r.totalPaid > 0 ? 'inherit' : 'var(--text-muted)' }}>{r.totalPaid > 0 ? `₹${formatCurrency(r.totalPaid)}` : '-'}</td>
                             <td style={{ textAlign: 'right', fontWeight: 600, color: (r.monthIndex <= monthsElapsed && r.loanBalAfter > 0) ? 'inherit' : 'var(--text-muted)' }}>{(r.monthIndex <= monthsElapsed && r.loanBalAfter > 0) ? `₹${formatCurrency(r.loanBalAfter)}` : '-'}</td>
-                            <td style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: '1.2' }}>
+                            <td style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--text-muted)', textAlign: 'center', lineHeight: '1.2' }}>
                               {r.updatedAt ? (
                                 <>
                                   <div style={{ whiteSpace: 'nowrap' }}>{new Date(r.updatedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
@@ -1194,7 +1194,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
           }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '18px' }}>Edit Profile</h3>
+              <h3 style={{ margin: 0, fontSize: `calc(18px * var(--text-scale, 1))` }}>Edit Profile</h3>
               <button onClick={() => setIsEditingProfile(false)} className="btn" style={{ padding: '8px', background: '#f1f3f5' }}>
                 <X size={18} />
               </button>
@@ -1202,7 +1202,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div className="form-group">
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Account Number</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Account Number</label>
                   <input
                     type="text"
                     value={member.memberNumber}
@@ -1212,7 +1212,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                   />
                 </div>
                 <div className="form-group">
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Joining Date</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Joining Date</label>
                   <input
                     type="text"
                     value={member.startDate}
@@ -1224,7 +1224,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
               </div>
 
               <div className="form-group">
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Name</label>
+                <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Name</label>
                 <input
                   type="text"
                   value={profileFormData.name}
@@ -1236,7 +1236,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div className="form-group">
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Mobile Number</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Mobile Number</label>
                   <input
                     type="text"
                     value={profileFormData.mobile}
@@ -1246,7 +1246,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                   />
                 </div>
                 <div className="form-group">
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Monthly Save (₹)</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Monthly Save (₹)</label>
                   <input
                     type="text"
                     value={formatCurrency(member.monthlyContribution)}
@@ -1259,7 +1259,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div className="form-group">
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Tenure (Months)</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Tenure (Months)</label>
                   <input
                     type="number"
                     value={profileFormData.tenureMonths === 0 ? '' : profileFormData.tenureMonths}
@@ -1269,7 +1269,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                   />
                 </div>
                 <div className="form-group">
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Maturity Amount (₹)</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Maturity Amount (₹)</label>
                   <input
                     type="number"
                     value={profileFormData.expectedMaturityAmount === 0 ? '' : profileFormData.expectedMaturityAmount}
@@ -1281,7 +1281,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
               </div>
 
               <div className="form-group">
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Address</label>
+                <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Address</label>
                 <input
                   type="text"
                   value={profileFormData.address}
@@ -1311,17 +1311,17 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
           }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--danger)' }}>Delete Member</h3>
+              <h3 style={{ margin: 0, fontSize: `calc(18px * var(--text-scale, 1))`, color: 'var(--danger)' }}>Delete Member</h3>
               <button onClick={() => setIsDeletingProfile(false)} className="btn" style={{ padding: '8px', background: '#f1f3f5' }}>
                 <X size={18} />
               </button>
             </div>
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', lineHeight: '1.5' }}>
+              <p style={{ margin: 0, fontSize: `calc(14px * var(--text-scale, 1))`, color: 'var(--text-main)', lineHeight: '1.5' }}>
                 Are you sure you want to delete this member? This action cannot be undone and will remove all related installments and loans.
               </p>
               <div className="form-group">
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
+                <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
                   Please type <strong>{member.name}</strong> to confirm.
                 </label>
                 <input
@@ -1367,7 +1367,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
           }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ margin: 0, fontSize: `calc(18px * var(--text-scale, 1))`, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Info size={20} color="var(--primary)" />
                 {t('lateFee')} {lang === 'te' ? 'వివరాలు' : 'Breakdown'}
               </h3>
@@ -1378,7 +1378,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             
             <div style={{ padding: '20px', overflowY: 'auto' }}>
               {lateFeeBreakdown.length > 0 ? (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: `calc(13px * var(--text-scale, 1))`, textAlign: 'left' }}>
                   <thead style={{ position: 'sticky', top: '-20px', backgroundColor: 'var(--bg-app)', zIndex: 2, boxShadow: '0 1px 0 var(--border)' }}>
                     <tr style={{ color: 'var(--text-muted)' }}>
                       <th style={{ padding: '12px 4px 8px' }}>{lang === 'te' ? 'నెల' : 'Month'}</th>
@@ -1391,7 +1391,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                     {lateFeeBreakdown.map((row, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
                         <td style={{ padding: '8px 4px', fontWeight: 500 }}>{row.month}</td>
-                        <td style={{ padding: '8px 4px' }}>₹{formatCurrency(row.pendingAmount)} <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({row.rate}%)</span></td>
+                        <td style={{ padding: '8px 4px' }}>₹{formatCurrency(row.pendingAmount)} <span style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>({row.rate}%)</span></td>
                         <td style={{ padding: '8px 4px' }}>{row.multiplier} {row.periodText}</td>
                         <td style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 600, color: 'var(--danger)' }}>₹{row.fine}</td>
                       </tr>
@@ -1400,7 +1400,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                   <tfoot style={{ position: 'sticky', bottom: '-20px', backgroundColor: 'var(--bg-app)', zIndex: 2, boxShadow: '0 -1px 0 var(--border)' }}>
                     <tr>
                       <td colSpan={3} style={{ padding: '16px 4px', textAlign: 'right', fontWeight: 600 }}>{t('totalAmountToPay')} ({lateFeeBreakdown.length} {t('months')}):</td>
-                      <td style={{ padding: '16px 4px', textAlign: 'right', fontWeight: 700, fontSize: '15px', color: 'var(--danger)' }}>₹{formatCurrency(calculatedLateFee)}</td>
+                      <td style={{ padding: '16px 4px', textAlign: 'right', fontWeight: 700, fontSize: `calc(15px * var(--text-scale, 1))`, color: 'var(--danger)' }}>₹{formatCurrency(calculatedLateFee)}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -1427,7 +1427,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
           }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ margin: 0, fontSize: `calc(18px * var(--text-scale, 1))`, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Info size={20} color="var(--primary)" />
                 {t('rdInterestCalc')}
               </h3>
@@ -1439,24 +1439,24 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             <div style={{ padding: '20px', overflowY: 'auto' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                 <div className="card" style={{ padding: '12px', background: '#f8f9fa' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('totalInstPaid')}</div>
-                  <div style={{ fontWeight: 600, fontSize: '15px' }}>{paidMonthsCount}</div>
+                  <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('totalInstPaid')}</div>
+                  <div style={{ fontWeight: 600, fontSize: `calc(15px * var(--text-scale, 1))` }}>{paidMonthsCount}</div>
                 </div>
                 <div className="card" style={{ padding: '12px', background: '#f8f9fa' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('installmentAmt')}</div>
-                  <div style={{ fontWeight: 600, fontSize: '15px' }}>₹{formatCurrency(member.monthlyContribution)}</div>
+                  <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('installmentAmt')}</div>
+                  <div style={{ fontWeight: 600, fontSize: `calc(15px * var(--text-scale, 1))` }}>₹{formatCurrency(member.monthlyContribution)}</div>
                 </div>
                 <div className="card" style={{ padding: '12px', background: '#f8f9fa' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('totalContr')}</div>
-                  <div style={{ fontWeight: 600, fontSize: '15px' }}>₹{formatCurrency(rdCalcResult.totalContribution)}</div>
+                  <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('totalContr')}</div>
+                  <div style={{ fontWeight: 600, fontSize: `calc(15px * var(--text-scale, 1))` }}>₹{formatCurrency(rdCalcResult.totalContribution)}</div>
                 </div>
                 <div className="card" style={{ padding: '12px', background: '#f8f9fa' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('accInt')}</div>
-                  <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--success)' }}>₹{formatCurrency(rdCalcResult.totalInterest)}</div>
+                  <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('accInt')}</div>
+                  <div style={{ fontWeight: 600, fontSize: `calc(15px * var(--text-scale, 1))`, color: 'var(--success)' }}>₹{formatCurrency(rdCalcResult.totalInterest)}</div>
                 </div>
                 <div className="card" style={{ padding: '12px', background: '#e3f2fd', border: '1px solid #90caf9' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('closingBal')}</div>
-                  <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--primary)' }}>₹{formatCurrency(rdCalcResult.currentBalance)}</div>
+                  <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('closingBal')}</div>
+                  <div style={{ fontWeight: 700, fontSize: `calc(16px * var(--text-scale, 1))`, color: 'var(--primary)' }}>₹{formatCurrency(rdCalcResult.currentBalance)}</div>
                 </div>
               </div>
 

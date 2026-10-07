@@ -64,7 +64,7 @@ export const GlobalSearch = () => {
             padding: '10px 12px 10px 40px',
             border: '1px solid #e5e7eb',
             borderRadius: '20px',
-            fontSize: '14px',
+            fontSize: `calc(14px * var(--text-scale, 1))`,
             outline: 'none',
             background: '#f9fafb',
             transition: 'all 0.3s'
@@ -106,12 +106,12 @@ export const GlobalSearch = () => {
                 <div>
                   <div style={{ fontWeight: 600, color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <User size={14} color="#6366f1" /> {member.name} 
-                    <span style={{ fontSize: '11px', background: '#e0e7ff', color: '#4f46e5', padding: '2px 6px', borderRadius: '4px' }}>
+                    <span style={{ fontSize: `calc(11px * var(--text-scale, 1))`, background: '#e0e7ff', color: '#4f46e5', padding: '2px 6px', borderRadius: '4px' }}>
                       #{member.memberNumber}
                     </span>
                   </div>
                   {member.mobile && (
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: '#6b7280', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <Phone size={12} /> {member.mobile}
                     </div>
                   )}
@@ -120,7 +120,7 @@ export const GlobalSearch = () => {
               </div>
             ))
           ) : (
-            <div style={{ padding: '16px', textAlign: 'center', color: '#6b7280', fontSize: '14px' }}>
+            <div style={{ padding: '16px', textAlign: 'center', color: '#6b7280', fontSize: `calc(14px * var(--text-scale, 1))` }}>
               No results found
             </div>
           )}

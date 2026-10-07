@@ -367,7 +367,7 @@ export const TransactionsView = () => {
       <div className="view-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '400px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
           <div style={{ width: '40px', height: '40px', border: '4px solid #e0e7ff', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-          <div style={{ color: '#4f46e5', fontWeight: 600, fontSize: '16px' }}>Processing Data...</div>
+          <div style={{ color: '#4f46e5', fontWeight: 600, fontSize: `calc(16px * var(--text-scale, 1))` }}>Processing Data...</div>
           <style>
             {`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}
           </style>
@@ -377,20 +377,20 @@ export const TransactionsView = () => {
   }
 
   return (
-    <div className="view-container">
+    <div className="view-container" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Dashboard Top */}
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 250px', background: '#fff', padding: '16px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: '14px' }}>{t('totalEntries')}</h3>
-          <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#111827' }}>{totalRecords}</p>
+          <h3 style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('totalEntries')}</h3>
+          <p style={{ margin: 0, fontSize: `calc(24px * var(--text-scale, 1))`, fontWeight: 'bold', color: '#111827' }}>{totalRecords}</p>
         </div>
         <div style={{ flex: '1 1 250px', background: '#fff', padding: '16px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: '14px' }}>{t('totalCollectionsFiltered')}</h3>
-          <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>₹{totalAmount.toLocaleString()}</p>
+          <h3 style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('totalCollectionsFiltered')}</h3>
+          <p style={{ margin: 0, fontSize: `calc(24px * var(--text-scale, 1))`, fontWeight: 'bold', color: '#10b981' }}>₹{totalAmount.toLocaleString()}</p>
         </div>
         <div style={{ flex: '1 1 250px', background: '#fff', padding: '16px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: '14px' }}>{t('totalLoanIssued')}</h3>
-          <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>₹{totalLoanIssued.toLocaleString()}</p>
+          <h3 style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('totalLoanIssued')}</h3>
+          <p style={{ margin: 0, fontSize: `calc(24px * var(--text-scale, 1))`, fontWeight: 'bold', color: '#ef4444' }}>₹{totalLoanIssued.toLocaleString()}</p>
         </div>
       </div>
 
@@ -416,7 +416,7 @@ export const TransactionsView = () => {
               background: showFilters ? '#e0e7ff' : '#f9fafb',
               border: `1px solid ${showFilters ? '#4f46e5' : '#e5e7eb'}`,
               color: showFilters ? '#4f46e5' : '#4b5563',
-              cursor: 'pointer', fontWeight: 600, fontSize: '14px',
+              cursor: 'pointer', fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`,
               transition: 'all 0.2s'
             }}
           >
@@ -445,7 +445,7 @@ export const TransactionsView = () => {
                   border: 'none',
                   background: dateFilterType === filter ? '#4f46e5' : '#f3f4f6',
                   color: dateFilterType === filter ? '#fff' : '#4b5563',
-                  fontSize: '13px',
+                  fontSize: `calc(13px * var(--text-scale, 1))`,
                   fontWeight: 600,
                   cursor: 'pointer',
                   whiteSpace: 'nowrap'
@@ -475,45 +475,45 @@ export const TransactionsView = () => {
                 style={{ border: 'none', background: 'transparent', outline: 'none' }}
               />
             </div>
-            {dateError && <span style={{ color: '#ef4444', fontSize: '12px', paddingLeft: '4px', fontWeight: 500 }}>{dateError}</span>}
+            {dateError && <span style={{ color: '#ef4444', fontSize: `calc(12px * var(--text-scale, 1))`, paddingLeft: '4px', fontWeight: 500 }}>{dateError}</span>}
           </div>
         )}
 
         {showFilters && (
           <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px', marginTop: '8px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', color: '#4b5563', fontWeight: 500 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: `calc(14px * var(--text-scale, 1))`, color: '#4b5563', fontWeight: 500 }}>
                 <input type="checkbox" checked={advFilters.hasLoan} onChange={(e) => setAdvFilters(prev => ({ ...prev, hasLoan: e.target.checked }))} style={{ width: '16px', height: '16px', accentColor: '#4f46e5' }} />
                 {t('filterLoanActive')}
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', color: '#4b5563', fontWeight: 500 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: `calc(14px * var(--text-scale, 1))`, color: '#4b5563', fontWeight: 500 }}>
                 <input type="checkbox" checked={advFilters.hasLateFee} onChange={(e) => setAdvFilters(prev => ({ ...prev, hasLateFee: e.target.checked }))} style={{ width: '16px', height: '16px', accentColor: '#4f46e5' }} />
                 {t('filterOnlyLateFee')}
               </label>
             </div>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#4b5563', marginBottom: '8px', display: 'block' }}>{t('filterRdRange')}</label>
+              <label style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: '#4b5563', marginBottom: '8px', display: 'block' }}>{t('filterRdRange')}</label>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <input type="number" placeholder={t('minAmount')} value={advFilters.rdMin} onChange={e => setAdvFilters(p => ({...p, rdMin: e.target.value}))} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '13px' }} />
-                <input type="number" placeholder={t('maxAmount')} value={advFilters.rdMax} onChange={e => setAdvFilters(p => ({...p, rdMax: e.target.value}))} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '13px' }} />
+                <input type="number" placeholder={t('minAmount')} value={advFilters.rdMin} onChange={e => setAdvFilters(p => ({...p, rdMin: e.target.value}))} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: `calc(13px * var(--text-scale, 1))` }} />
+                <input type="number" placeholder={t('maxAmount')} value={advFilters.rdMax} onChange={e => setAdvFilters(p => ({...p, rdMax: e.target.value}))} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: `calc(13px * var(--text-scale, 1))` }} />
               </div>
             </div>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#4b5563', marginBottom: '8px', display: 'block' }}>{t('filterTotalRange')}</label>
+              <label style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: '#4b5563', marginBottom: '8px', display: 'block' }}>{t('filterTotalRange')}</label>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <input type="number" placeholder={t('minAmount')} value={advFilters.totalMin} onChange={e => setAdvFilters(p => ({...p, totalMin: e.target.value}))} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '13px' }} />
-                <input type="number" placeholder={t('maxAmount')} value={advFilters.totalMax} onChange={e => setAdvFilters(p => ({...p, totalMax: e.target.value}))} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '13px' }} />
+                <input type="number" placeholder={t('minAmount')} value={advFilters.totalMin} onChange={e => setAdvFilters(p => ({...p, totalMin: e.target.value}))} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: `calc(13px * var(--text-scale, 1))` }} />
+                <input type="number" placeholder={t('maxAmount')} value={advFilters.totalMax} onChange={e => setAdvFilters(p => ({...p, totalMax: e.target.value}))} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: `calc(13px * var(--text-scale, 1))` }} />
               </div>
             </div>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#4b5563', marginBottom: '8px', display: 'block' }}>{t('filterInterestRange')}</label>
+              <label style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: '#4b5563', marginBottom: '8px', display: 'block' }}>{t('filterInterestRange')}</label>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <input type="number" placeholder={t('minAmount')} value={advFilters.intMin} onChange={e => setAdvFilters(p => ({...p, intMin: e.target.value}))} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '13px' }} />
-                <input type="number" placeholder={t('maxAmount')} value={advFilters.intMax} onChange={e => setAdvFilters(p => ({...p, intMax: e.target.value}))} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '13px' }} />
+                <input type="number" placeholder={t('minAmount')} value={advFilters.intMin} onChange={e => setAdvFilters(p => ({...p, intMin: e.target.value}))} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: `calc(13px * var(--text-scale, 1))` }} />
+                <input type="number" placeholder={t('maxAmount')} value={advFilters.intMax} onChange={e => setAdvFilters(p => ({...p, intMax: e.target.value}))} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: `calc(13px * var(--text-scale, 1))` }} />
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <button onClick={() => setAdvFilters({ hasLoan: false, hasLateFee: false, rdMin: '', rdMax: '', totalMin: '', totalMax: '', intMin: '', intMax: '' })} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ef4444', color: '#ef4444', background: 'transparent', cursor: 'pointer', fontSize: '13px', fontWeight: 600, width: '100%' }}>
+              <button onClick={() => setAdvFilters({ hasLoan: false, hasLateFee: false, rdMin: '', rdMax: '', totalMin: '', totalMax: '', intMin: '', intMax: '' })} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ef4444', color: '#ef4444', background: 'transparent', cursor: 'pointer', fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, width: '100%' }}>
                 {t('resetFilters')}
               </button>
             </div>
@@ -522,20 +522,20 @@ export const TransactionsView = () => {
       </div>
 
       {/* Comprehensive History List */}
-      <div className="table-wrapper" style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+      <div className="table-wrapper" style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', flex: 1, minHeight: 0, maxHeight: 'none', overflow: 'auto' }}>
         <table className="table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px' }}>
           <thead style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
-                <th onClick={() => requestSort('timestamp')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', userSelect: 'none' }}>{t('entryDate')}{getSortIcon('timestamp')}</th>
-                <th onClick={() => requestSort('memberName')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', userSelect: 'none' }}>{t('memberDetails')}{getSortIcon('memberName')}</th>
-                <th onClick={() => requestSort('memberStatus')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', userSelect: 'none' }}>{t('memberStatus')}{getSortIcon('memberStatus')}</th>
-                <th onClick={() => requestSort('monthIndex')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', background: '#f0f9ff', userSelect: 'none' }}>{t('entryMonth')}{getSortIcon('monthIndex')}</th>
-                <th onClick={() => requestSort('rdAmount')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', background: '#f0f9ff', textAlign: 'right', userSelect: 'none' }}>{t('rdPaid')}{getSortIcon('rdAmount')}</th>
-                <th onClick={() => requestSort('loanDisbursed')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', background: '#fff1f2', textAlign: 'right', userSelect: 'none' }}>{t('loanIssued')}{getSortIcon('loanDisbursed')}</th>
-                <th onClick={() => requestSort('principalPaid')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', background: '#fff1f2', textAlign: 'right', userSelect: 'none' }}>{t('prinPaid')}{getSortIcon('principalPaid')}</th>
-                <th onClick={() => requestSort('interestPaid')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', background: '#fff1f2', textAlign: 'right', userSelect: 'none' }}>{t('intPaid')}{getSortIcon('interestPaid')}</th>
-                <th onClick={() => requestSort('lateFee')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', background: '#fdf4ff', textAlign: 'right', userSelect: 'none' }}>{t('lateFeeHistory')}{getSortIcon('lateFee')}</th>
-                <th onClick={() => requestSort('totalPaid')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: '13px', background: '#f0fdf4', textAlign: 'right', userSelect: 'none' }}>{t('totalPaidHistory')}{getSortIcon('totalPaid')}</th>
+                <th onClick={() => requestSort('timestamp')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, userSelect: 'none' }}>{t('entryDate')}{getSortIcon('timestamp')}</th>
+                <th onClick={() => requestSort('memberName')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, userSelect: 'none' }}>{t('memberDetails')}{getSortIcon('memberName')}</th>
+                <th onClick={() => requestSort('memberStatus')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, userSelect: 'none' }}>{t('memberStatus')}{getSortIcon('memberStatus')}</th>
+                <th onClick={() => requestSort('monthIndex')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, background: '#f0f9ff', userSelect: 'none' }}>{t('entryMonth')}{getSortIcon('monthIndex')}</th>
+                <th onClick={() => requestSort('rdAmount')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, background: '#f0f9ff', textAlign: 'right', userSelect: 'none' }}>{t('rdPaid')}{getSortIcon('rdAmount')}</th>
+                <th onClick={() => requestSort('loanDisbursed')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, background: '#fff1f2', textAlign: 'right', userSelect: 'none' }}>{t('loanIssued')}{getSortIcon('loanDisbursed')}</th>
+                <th onClick={() => requestSort('principalPaid')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, background: '#fff1f2', textAlign: 'right', userSelect: 'none' }}>{t('prinPaid')}{getSortIcon('principalPaid')}</th>
+                <th onClick={() => requestSort('interestPaid')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, background: '#fff1f2', textAlign: 'right', userSelect: 'none' }}>{t('intPaid')}{getSortIcon('interestPaid')}</th>
+                <th onClick={() => requestSort('lateFee')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, background: '#fdf4ff', textAlign: 'right', userSelect: 'none' }}>{t('lateFeeHistory')}{getSortIcon('lateFee')}</th>
+                <th onClick={() => requestSort('totalPaid')} style={{ cursor: 'pointer', padding: '12px 16px', color: '#4b5563', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, background: '#f0fdf4', textAlign: 'right', userSelect: 'none' }}>{t('totalPaidHistory')}{getSortIcon('totalPaid')}</th>
               </tr>
             </thead>
             <tbody>
@@ -572,23 +572,23 @@ export const TransactionsView = () => {
                         <div style={{ fontWeight: 600, color: '#111827' }}>
                           {new Date(entry.timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </div>
-                        <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                        <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: '#6b7280', marginTop: '4px' }}>
                           {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </td>
                       
                       {/* Member Details */}
                       <td style={{ padding: '12px 16px', verticalAlign: 'top' }}>
-                        <div style={{ fontWeight: 600, color: '#111827', fontSize: '14px' }}>{member.name}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 500 }}>{t('acStr')}: #{member.memberNumber}</div>
-                        <div style={{ fontSize: '12px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                        <div style={{ fontWeight: 600, color: '#111827', fontSize: `calc(14px * var(--text-scale, 1))` }}>{member.name}</div>
+                        <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--primary)', fontWeight: 500 }}>{t('acStr')}: #{member.memberNumber}</div>
+                        <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                           <Phone size={10} /> {member.mobile}
                         </div>
                       </td>
                       
                       {/* Member Status */}
                       <td style={{ padding: '12px 16px', verticalAlign: 'top' }}>
-                        <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
                             <span style={{ color: '#6b7280' }}>{t('monthsPaidTable')}</span>
                             <strong style={{ color: 'var(--success)' }}>{stats.paidMonthsCount} / {member.tenureMonths}</strong>
@@ -614,48 +614,48 @@ export const TransactionsView = () => {
 
                       {/* Entry Month */}
                       <td style={{ padding: '12px 16px', verticalAlign: 'top', background: '#f0f9ff' }}>
-                        <div style={{ fontWeight: 600, fontSize: '13px', color: '#0369a1' }}>{entryMonthStr}</div>
-                        <div style={{ fontSize: '11px', color: '#0284c7' }}>({t('month')} {entry.monthIndex})</div>
+                        <div style={{ fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))`, color: '#0369a1' }}>{entryMonthStr}</div>
+                        <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: '#0284c7' }}>({t('month')} {entry.monthIndex})</div>
                       </td>
 
                       {/* RD Paid */}
                       <td style={{ padding: '12px 16px', verticalAlign: 'top', textAlign: 'right', background: '#f0f9ff' }}>
-                        <div style={{ fontWeight: 600, color: entry.rdAmount > 0 ? '#0369a1' : '#9ca3af', fontSize: '14px' }}>
+                        <div style={{ fontWeight: 600, color: entry.rdAmount > 0 ? '#0369a1' : '#9ca3af', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                           {entry.rdAmount > 0 ? `₹${formatCurrency(entry.rdAmount)}` : '-'}
                         </div>
                       </td>
 
                       {/* Loan Issued */}
                       <td style={{ padding: '12px 16px', verticalAlign: 'top', textAlign: 'right', background: '#fff1f2' }}>
-                        <div style={{ fontWeight: 600, color: entry.loanDisbursed > 0 ? '#be123c' : '#9ca3af', fontSize: '14px' }}>
+                        <div style={{ fontWeight: 600, color: entry.loanDisbursed > 0 ? '#be123c' : '#9ca3af', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                           {entry.loanDisbursed > 0 ? `₹${formatCurrency(entry.loanDisbursed)}` : '-'}
                         </div>
                       </td>
 
                       {/* Prin Paid */}
                       <td style={{ padding: '12px 16px', verticalAlign: 'top', textAlign: 'right', background: '#fff1f2' }}>
-                        <div style={{ fontWeight: 600, color: entry.principalPaid > 0 ? '#059669' : '#9ca3af', fontSize: '14px' }}>
+                        <div style={{ fontWeight: 600, color: entry.principalPaid > 0 ? '#059669' : '#9ca3af', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                           {entry.principalPaid > 0 ? `₹${formatCurrency(entry.principalPaid)}` : '-'}
                         </div>
                       </td>
 
                       {/* Int Paid */}
                       <td style={{ padding: '12px 16px', verticalAlign: 'top', textAlign: 'right', background: '#fff1f2' }}>
-                        <div style={{ fontWeight: 600, color: entry.interestPaid > 0 ? '#059669' : '#9ca3af', fontSize: '14px' }}>
+                        <div style={{ fontWeight: 600, color: entry.interestPaid > 0 ? '#059669' : '#9ca3af', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                           {entry.interestPaid > 0 ? `₹${formatCurrency(entry.interestPaid)}` : '-'}
                         </div>
                       </td>
 
                       {/* Late Fee */}
                       <td style={{ padding: '12px 16px', verticalAlign: 'top', textAlign: 'right', background: '#fdf4ff' }}>
-                        <div style={{ fontWeight: 600, color: entry.lateFee > 0 ? '#a21caf' : '#9ca3af', fontSize: '14px' }}>
+                        <div style={{ fontWeight: 600, color: entry.lateFee > 0 ? '#a21caf' : '#9ca3af', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                           {entry.lateFee > 0 ? `₹${formatCurrency(entry.lateFee)}` : '-'}
                         </div>
                       </td>
 
                       {/* Total Paid */}
                       <td style={{ padding: '12px 16px', verticalAlign: 'top', textAlign: 'right', background: '#f0fdf4' }}>
-                        <div style={{ fontWeight: 700, color: totalPaidThisEntry > 0 ? '#15803d' : '#9ca3af', fontSize: '15px' }}>
+                        <div style={{ fontWeight: 700, color: totalPaidThisEntry > 0 ? '#15803d' : '#9ca3af', fontSize: `calc(15px * var(--text-scale, 1))` }}>
                           {totalPaidThisEntry > 0 ? `₹${formatCurrency(totalPaidThisEntry)}` : '-'}
                         </div>
                       </td>
@@ -670,7 +670,7 @@ export const TransactionsView = () => {
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', marginTop: '16px', background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <div style={{ color: '#6b7280', fontSize: '14px' }}>
+          <div style={{ color: '#6b7280', fontSize: `calc(14px * var(--text-scale, 1))` }}>
             Showing {Math.min(totalRecords, (currentPage - 1) * itemsPerPage + 1)} to {Math.min(totalRecords, currentPage * itemsPerPage)} of {totalRecords} entries
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -681,7 +681,7 @@ export const TransactionsView = () => {
             >
               Previous
             </button>
-            <div style={{ padding: '6px 12px', fontWeight: 600, color: '#111827', fontSize: '14px' }}>Page {currentPage} of {totalPages}</div>
+            <div style={{ padding: '6px 12px', fontWeight: 600, color: '#111827', fontSize: `calc(14px * var(--text-scale, 1))` }}>Page {currentPage} of {totalPages}</div>
             <button 
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}

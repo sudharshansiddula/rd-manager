@@ -222,7 +222,7 @@ export const DashboardView = () => {
       <div className="view-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '400px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
           <div style={{ width: '40px', height: '40px', border: '4px solid #e0e7ff', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-          <div style={{ color: '#4f46e5', fontWeight: 600, fontSize: '16px' }}>{lang === 'te' ? 'లెక్కలు జరుగుతున్నాయి...' : 'Crunching Numbers...'}</div>
+          <div style={{ color: '#4f46e5', fontWeight: 600, fontSize: `calc(16px * var(--text-scale, 1))` }}>{lang === 'te' ? 'లెక్కలు జరుగుతున్నాయి...' : 'Crunching Numbers...'}</div>
           <style>
             {`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}
           </style>
@@ -251,7 +251,7 @@ export const DashboardView = () => {
       neutral: { bg: '#f3f4f6', text: '#374151' }
     };
     return (
-      <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '10px', backgroundColor: colors[type].bg, color: colors[type].text, fontWeight: 600, marginLeft: '8px' }}>
+      <span style={{ fontSize: `calc(10px * var(--text-scale, 1))`, padding: '2px 6px', borderRadius: '10px', backgroundColor: colors[type].bg, color: colors[type].text, fontWeight: 600, marginLeft: '8px' }}>
         {text}
       </span>
     );
@@ -263,37 +263,37 @@ export const DashboardView = () => {
       {/* 1. Top Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         <div className="card" style={{ padding: '16px', borderLeft: '4px solid #3b82f6' }}>
-          <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+          <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: '#6b7280', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
             <Users size={14} style={{ marginRight: '6px' }} /> {t('totalMembersCount')}
             <InfoIcon tooltip={getT(lang, 'ttTotalMembers')} />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '8px' }}>{stats.totalMembers}</div>
+          <div style={{ fontSize: `calc(24px * var(--text-scale, 1))`, fontWeight: 700, marginTop: '8px' }}>{stats.totalMembers}</div>
         </div>
         
         <div className="card" style={{ padding: '16px', borderLeft: '4px solid #10b981' }}>
-          <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+          <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: '#6b7280', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
             <PiggyBank size={14} style={{ marginRight: '6px' }} /> {getT(lang, 'moneyCollected')}
             <InfoIcon tooltip={getT(lang, 'ttMoneyCollected')} />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '8px', color: '#10b981' }}>₹{formatCurrency(stats.totalRDCollected)}</div>
+          <div style={{ fontSize: `calc(24px * var(--text-scale, 1))`, fontWeight: 700, marginTop: '8px', color: '#10b981' }}>₹{formatCurrency(stats.totalRDCollected)}</div>
           <Badge text={getT(lang, 'statusCollected')} type="success" />
         </div>
 
         <div className="card" style={{ padding: '16px', borderLeft: '4px solid #8b5cf6' }}>
-          <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+          <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: '#6b7280', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
             <Landmark size={14} style={{ marginRight: '6px' }} /> {getT(lang, 'totalOwedToMembers')}
             <InfoIcon tooltip={getT(lang, 'ttTotalOwed')} />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '8px', color: '#8b5cf6' }}>₹{formatCurrency(stats.totalOwedToMembers)}</div>
+          <div style={{ fontSize: `calc(24px * var(--text-scale, 1))`, fontWeight: 700, marginTop: '8px', color: '#8b5cf6' }}>₹{formatCurrency(stats.totalOwedToMembers)}</div>
           <Badge text={getT(lang, 'statusPayable')} type="danger" />
         </div>
 
         <div className="card" style={{ padding: '16px', borderLeft: '4px solid #ef4444' }}>
-          <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+          <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: '#6b7280', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
             <Wallet size={14} style={{ marginRight: '6px' }} /> {getT(lang, 'totalOutstandingLoan')}
             <InfoIcon tooltip={getT(lang, 'ttOutstandingLoan')} />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '8px', color: '#ef4444' }}>₹{formatCurrency(stats.totalOutstandingLoan)}</div>
+          <div style={{ fontSize: `calc(24px * var(--text-scale, 1))`, fontWeight: 700, marginTop: '8px', color: '#ef4444' }}>₹{formatCurrency(stats.totalOutstandingLoan)}</div>
           <Badge text={getT(lang, 'statusOutstanding')} type="warning" />
         </div>
       </div>
@@ -305,34 +305,34 @@ export const DashboardView = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Member Money Position */}
           <div className="card" style={{ padding: '20px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px' }}>
+            <h3 style={{ fontSize: `calc(16px * var(--text-scale, 1))`, fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px' }}>
               {getT(lang, 'memberMoneyPos')}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                 <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'moneyCollected')} <InfoIcon tooltip={getT(lang, 'ttMoneyCollected')} /></span>
                 <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{formatCurrency(stats.activeRDCollected)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                 <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'bonusPayable')} <InfoIcon tooltip={getT(lang, 'ttBonusPayable')} /></span>
                 <span style={{ fontWeight: 600, color: '#ef4444' }}>+ ₹{formatCurrency(stats.activeBonusPayable)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', borderTop: '1px dashed #e5e7eb', paddingTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))`, borderTop: '1px dashed #e5e7eb', paddingTop: '8px' }}>
                 <span style={{ color: '#111827', fontWeight: 600, display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalOwedToMembers')} <InfoIcon tooltip={getT(lang, 'ttTotalOwed')} /></span>
                 <span style={{ fontWeight: 700, color: '#8b5cf6' }}>₹{formatCurrency(stats.totalOwedToMembers)}</span>
               </div>
               
               <div style={{ height: '16px' }}></div>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                 <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'loanPrinRecovered')} <InfoIcon tooltip={getT(lang, 'ttOutstandingLoan')} /></span>
                 <span style={{ fontWeight: 600, color: '#f59e0b' }}>₹{formatCurrency(stats.totalOutstandingLoan)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                 <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'loanIntPending')} <InfoIcon tooltip={getT(lang, 'ttIntPending')} /></span>
                 <span style={{ fontWeight: 600, color: '#f59e0b' }}>₹{formatCurrency(stats.totalLoanInterestPending)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', borderTop: '1px dashed #e5e7eb', paddingTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))`, borderTop: '1px dashed #e5e7eb', paddingTop: '8px' }}>
                 <span style={{ color: '#111827', fontWeight: 600, display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalPendingRD')} <InfoIcon tooltip={getT(lang, 'ttPendingRD')} /></span>
                 <span style={{ fontWeight: 700, color: '#ef4444' }}>₹{formatCurrency(stats.totalPendingRDAmount)}</span>
               </div>
@@ -341,26 +341,26 @@ export const DashboardView = () => {
 
           {/* Future Expected Position */}
           <div className="card" style={{ padding: '20px', backgroundColor: '#fefce8', border: '1px solid #fef08a' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid #fde047', paddingBottom: '12px', color: '#a16207' }}>
+            <h3 style={{ fontSize: `calc(16px * var(--text-scale, 1))`, fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid #fde047', paddingBottom: '12px', color: '#a16207' }}>
               {getT(lang, 'futureExpectedPos')} <Badge text={getT(lang, 'statusFuture')} type="warning" />
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                 <span style={{ color: '#854d0e', display: 'flex', alignItems: 'center' }}>{getT(lang, 'futureRDExpected')} <InfoIcon tooltip={getT(lang, 'ttFutureRD')} /></span>
                 <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{formatCurrency(stats.futureRDExpected)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                 <span style={{ color: '#854d0e', display: 'flex', alignItems: 'center' }}>{getT(lang, 'futureIntExpected')} <InfoIcon tooltip={getT(lang, 'ttFutureInt')} /></span>
                 <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{formatCurrency(Math.round(stats.futureInterestExpected))}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', borderTop: '1px dashed #fde047', paddingTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))`, borderTop: '1px dashed #fde047', paddingTop: '8px' }}>
                 <span style={{ color: '#713f12', fontWeight: 600, display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalExpectedIncome')} <InfoIcon tooltip={getT(lang, 'ttTotalExpectedIncome')} /></span>
                 <span style={{ fontWeight: 700, color: '#10b981' }}>₹{formatCurrency(Math.round(stats.futureRDExpected + stats.futureInterestExpected))}</span>
               </div>
 
               <div style={{ height: '8px' }}></div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                 <span style={{ color: '#854d0e', display: 'flex', alignItems: 'center' }}>{getT(lang, 'futureBonusExpected')} <InfoIcon tooltip={getT(lang, 'ttFutureBonus')} /></span>
                 <span style={{ fontWeight: 600, color: '#ef4444' }}>- ₹{formatCurrency(stats.futureBonusExpected)}</span>
               </div>
@@ -373,32 +373,32 @@ export const DashboardView = () => {
           
           {/* Profit & Loss */}
           <div className="card" style={{ padding: '20px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px' }}>
+            <h3 style={{ fontSize: `calc(16px * var(--text-scale, 1))`, fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px' }}>
               {getT(lang, 'profitAndLoss')}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                 <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalLoanInterestCollected')} <InfoIcon tooltip={getT(lang, 'ttTotalIntCol')} /></span>
                 <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{formatCurrency(stats.totalLoanInterestCollected)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                 <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'lateFeeCol')} <InfoIcon tooltip={getT(lang, 'ttLateFeeCol')} /></span>
                 <span style={{ fontWeight: 600, color: '#10b981' }}>+ ₹{formatCurrency(stats.totalLateFineCollected)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', borderTop: '1px dashed #e5e7eb', paddingTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))`, borderTop: '1px dashed #e5e7eb', paddingTop: '8px' }}>
                 <span style={{ color: '#111827', fontWeight: 600, display: 'flex', alignItems: 'center' }}>{getT(lang, 'actualIncome')} <InfoIcon tooltip={getT(lang, 'ttActualIncome')} /></span>
                 <span style={{ fontWeight: 700, color: '#10b981' }}>₹{formatCurrency(stats.actualIncome)}</span>
               </div>
 
               <div style={{ height: '8px' }}></div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                 <span style={{ color: '#4b5563', display: 'flex', alignItems: 'center' }}>{getT(lang, 'actualOutflow')} <InfoIcon tooltip={getT(lang, 'ttActualOutflow')} /></span>
                 <span style={{ fontWeight: 600, color: '#ef4444' }}>- ₹{formatCurrency(stats.actualOutflow)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', borderTop: '1px dashed #e5e7eb', paddingTop: '8px', marginTop: '4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(15px * var(--text-scale, 1))`, borderTop: '1px dashed #e5e7eb', paddingTop: '8px', marginTop: '4px' }}>
                 <span style={{ color: '#111827', fontWeight: 700, display: 'flex', alignItems: 'center' }}>{getT(lang, 'netPosition')} <InfoIcon tooltip={getT(lang, 'ttNetPosition')} /></span>
-                <span style={{ fontWeight: 700, color: stats.currentProfit >= 0 ? '#10b981' : '#ef4444', fontSize: '18px' }}>
+                <span style={{ fontWeight: 700, color: stats.currentProfit >= 0 ? '#10b981' : '#ef4444', fontSize: `calc(18px * var(--text-scale, 1))` }}>
                   {stats.currentProfit >= 0 ? getT(lang, 'currentProfit') : getT(lang, 'currentLoss')}: ₹{formatCurrency(Math.abs(stats.currentProfit))}
                 </span>
               </div>
@@ -407,21 +407,21 @@ export const DashboardView = () => {
 
           {/* Cash Balance */}
           <div className="card" style={{ padding: '20px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid #86efac', paddingBottom: '12px', color: '#166534' }}>
+            <h3 style={{ fontSize: `calc(16px * var(--text-scale, 1))`, fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid #86efac', paddingBottom: '12px', color: '#166534' }}>
               {getT(lang, 'cashBalancePos')}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                 <span style={{ color: '#15803d', display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalMoneyCollected')} <InfoIcon tooltip={getT(lang, 'ttTotalCashCol')} /></span>
                 <span style={{ fontWeight: 600, color: '#15803d' }}>+ ₹{formatCurrency(stats.totalCashCollected)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(14px * var(--text-scale, 1))` }}>
                 <span style={{ color: '#15803d', display: 'flex', alignItems: 'center' }}>{getT(lang, 'totalLoansGivenCash')} <InfoIcon tooltip={getT(lang, 'ttLoanGiven')} /></span>
                 <span style={{ fontWeight: 600, color: '#dc2626' }}>- ₹{formatCurrency(stats.totalLoanGiven)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', borderTop: '1px dashed #86efac', paddingTop: '8px', marginTop: '4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: `calc(15px * var(--text-scale, 1))`, borderTop: '1px dashed #86efac', paddingTop: '8px', marginTop: '4px' }}>
                 <span style={{ color: '#14532d', fontWeight: 700, display: 'flex', alignItems: 'center' }}>{getT(lang, 'cashInHand')} <InfoIcon tooltip={getT(lang, 'ttCashInHand')} /></span>
-                <span style={{ fontWeight: 800, color: '#16a34a', fontSize: '22px' }}>
+                <span style={{ fontWeight: 800, color: '#16a34a', fontSize: `calc(22px * var(--text-scale, 1))` }}>
                   ₹{formatCurrency(stats.cashInHand)}
                 </span>
               </div>
@@ -436,7 +436,7 @@ export const DashboardView = () => {
         
         {/* Monthly Chart */}
         <div className="card" style={{ padding: '20px', minHeight: '350px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px 0', color: '#111827' }}>
+          <h3 style={{ fontSize: `calc(16px * var(--text-scale, 1))`, fontWeight: 700, margin: '0 0 16px 0', color: '#111827' }}>
             {getT(lang, 'monthlyAnalysis')}
           </h3>
           <div style={{ height: '300px' }}>
@@ -450,7 +450,7 @@ export const DashboardView = () => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
-                        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', fontSize: '12px' }}>
+                        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', fontSize: `calc(12px * var(--text-scale, 1))` }}>
                           <p style={{ margin: '0 0 8px 0', fontWeight: 700 }}>Month: {data.month}</p>
                           <p style={{ margin: '0 0 4px 0', color: '#10b981' }}>RD + Int + Fine: ₹{formatCurrency(data.rd + data.intCollected + data.lateFee)}</p>
                           <p style={{ margin: '0 0 4px 0', color: '#ef4444' }}>Loans Given: ₹{formatCurrency(data.loanGiven)}</p>
@@ -462,7 +462,7 @@ export const DashboardView = () => {
                     return null;
                   }}
                 />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: `calc(12px * var(--text-scale, 1))` }} />
                 <Bar name="Cash In" dataKey={(d) => d.rd + d.intCollected + d.lateFee + d.loanRepaid} fill="#10b981" radius={[2, 2, 0, 0]} />
                 <Bar name="Cash Out (Loans)" dataKey="loanGiven" fill="#ef4444" radius={[2, 2, 0, 0]} />
               </BarChart>
@@ -472,7 +472,7 @@ export const DashboardView = () => {
 
         {/* Member Status Pie Chart */}
         <div className="card" style={{ padding: '20px', minHeight: '350px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px 0', color: '#111827' }}>
+          <h3 style={{ fontSize: `calc(16px * var(--text-scale, 1))`, fontWeight: 700, margin: '0 0 16px 0', color: '#111827' }}>
             {getT(lang, 'memberStatus')}
           </h3>
           <div style={{ height: '220px', position: 'relative' }}>
@@ -494,13 +494,13 @@ export const DashboardView = () => {
               </PieChart>
             </ResponsiveContainer>
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-              <div style={{ fontSize: '24px', fontWeight: 700, color: '#111827' }}>{stats.totalMembers}</div>
-              <div style={{ fontSize: '11px', color: '#6b7280' }}>Total</div>
+              <div style={{ fontSize: `calc(24px * var(--text-scale, 1))`, fontWeight: 700, color: '#111827' }}>{stats.totalMembers}</div>
+              <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: '#6b7280' }}>Total</div>
             </div>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', marginTop: '16px' }}>
             {stats.statusData.map((d: any, i: number) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', fontSize: '12px' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', fontSize: `calc(12px * var(--text-scale, 1))` }}>
                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: d.fill, marginRight: '6px' }}></div>
                 <span style={{ color: '#4b5563' }}>{d.name}: <strong>{d.value}</strong></span>
               </div>
@@ -512,15 +512,15 @@ export const DashboardView = () => {
       {/* 8. Recent Transactions */}
       <div className="card" style={{ padding: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#111827' }}>
+          <h3 style={{ fontSize: `calc(16px * var(--text-scale, 1))`, fontWeight: 700, margin: 0, color: '#111827' }}>
             {t('recentTransactionsDash')}
           </h3>
-          <button onClick={() => handleNav('transactions')} className="btn" style={{ background: 'none', border: 'none', color: '#4f46e5', fontSize: '13px', fontWeight: 600, padding: 0 }}>
+          <button onClick={() => handleNav('transactions')} className="btn" style={{ background: 'none', border: 'none', color: '#4f46e5', fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, padding: 0 }}>
             {getT(lang, 'viewAll')} &rarr;
           </button>
         </div>
         <div className="table-wrapper" style={{ maxHeight: '350px', overflowY: 'auto' }}>
-          <table className="table" style={{ fontSize: '13px', width: '100%', borderCollapse: 'collapse' }}>
+          <table className="table" style={{ fontSize: `calc(13px * var(--text-scale, 1))`, width: '100%', borderCollapse: 'collapse' }}>
             <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f9fafb' }}>
               <tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left', color: '#6b7280' }}>
                 <th style={{ padding: '8px 0' }}>{getT(lang, 'date')}</th>

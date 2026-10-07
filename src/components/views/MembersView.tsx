@@ -608,7 +608,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', overflow: 'hidden' }}>
       
       {/* Summary Dashboard Cards */}
       <div className="summary-grid">
@@ -617,7 +617,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
             <span className="summary-label">{t('totalMembers')}</span>
             <Users size={16} color="var(--primary)" />
           </div>
-          <span className="summary-value">{stats.activeMembers} <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>/ {stats.totalMembers}</span></span>
+          <span className="summary-value">{stats.activeMembers} <span style={{ fontSize: `calc(14px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>/ {stats.totalMembers}</span></span>
         </div>
         
         <div className="summary-card">
@@ -634,7 +634,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
             <Wallet size={16} color="var(--danger)" />
           </div>
           <span className="summary-value" style={{ color: 'var(--danger)' }}>
-            {stats.activeLoans} <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>(₹{formatCurrency(stats.totalLoansAmount)})</span>
+            {stats.activeLoans} <span style={{ fontSize: `calc(14px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>(₹{formatCurrency(stats.totalLoansAmount)})</span>
           </span>
         </div>
 
@@ -709,12 +709,12 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                 gap: '12px'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <strong style={{ fontSize: '14px' }}>{t('advancedFilters')}</strong>
+                  <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('advancedFilters')}</strong>
                   <X size={16} style={{ cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setShowAdvancedFilters(false)} />
                 </div>
                 
                 <div>
-                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('joinDate')}</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('joinDate')}</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input type="date" className="input-compact" value={advancedFilters.dateFrom} onChange={e => setAdvancedFilters(f => ({ ...f, dateFrom: e.target.value }))} placeholder={t('dateFrom')} />
                     <input type="date" className="input-compact" value={advancedFilters.dateTo} onChange={e => setAdvancedFilters(f => ({ ...f, dateTo: e.target.value }))} placeholder={t('dateTo')} />
@@ -722,7 +722,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('monthlyContribution')}</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('monthlyContribution')}</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input type="number" className="input-compact" value={advancedFilters.amountMin} onChange={e => setAdvancedFilters(f => ({ ...f, amountMin: e.target.value }))} placeholder="Min" />
                     <input type="number" className="input-compact" value={advancedFilters.amountMax} onChange={e => setAdvancedFilters(f => ({ ...f, amountMax: e.target.value }))} placeholder="Max" />
@@ -730,7 +730,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('pendingMonthsRange')}</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('pendingMonthsRange')}</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input type="number" className="input-compact" value={advancedFilters.pendingMin} onChange={e => setAdvancedFilters(f => ({ ...f, pendingMin: e.target.value }))} placeholder="Min" />
                     <input type="number" className="input-compact" value={advancedFilters.pendingMax} onChange={e => setAdvancedFilters(f => ({ ...f, pendingMax: e.target.value }))} placeholder="Max" />
@@ -738,7 +738,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('paidMonthsRange')}</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('paidMonthsRange')}</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input type="number" className="input-compact" value={advancedFilters.paidMin} onChange={e => setAdvancedFilters(f => ({ ...f, paidMin: e.target.value }))} placeholder="Min" />
                     <input type="number" className="input-compact" value={advancedFilters.paidMax} onChange={e => setAdvancedFilters(f => ({ ...f, paidMax: e.target.value }))} placeholder="Max" />
@@ -746,7 +746,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('loanAmountRange')}</label>
+                  <label style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>{t('loanAmountRange')}</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input type="number" className="input-compact" value={advancedFilters.loanMin} onChange={e => setAdvancedFilters(f => ({ ...f, loanMin: e.target.value }))} placeholder="Min" />
                     <input type="number" className="input-compact" value={advancedFilters.loanMax} onChange={e => setAdvancedFilters(f => ({ ...f, loanMax: e.target.value }))} placeholder="Max" />
@@ -772,7 +772,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       </div>
 
       {/* Members Table */}
-      <div className="table-wrapper" style={{ overflowX: 'auto' }}>
+      <div className="table-wrapper" style={{ overflow: 'auto', flex: 1, minHeight: 0, maxHeight: 'none' }}>
         <table className="table" style={{ whiteSpace: 'nowrap' }}>
           <thead>
             <tr>
@@ -826,45 +826,45 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                     onClick={() => setSelectedMember(member)}
                     className="hoverable-row"
                   >
-                    <td><strong style={{ color: 'var(--primary)', fontSize: '15px' }}>#{member.memberNumber}</strong></td>
+                    <td><strong style={{ color: 'var(--primary)', fontSize: `calc(15px * var(--text-scale, 1))` }}>#{member.memberNumber}</strong></td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontWeight: 600, fontSize: '14px' }}>{member.name}</span>
-                        <div className="icon-label" style={{ fontSize: '12px' }}>
+                        <span style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))` }}>{member.name}</span>
+                        <div className="icon-label" style={{ fontSize: `calc(12px * var(--text-scale, 1))` }}>
                           <Phone size={12} color="var(--text-muted)" />
                           <span>{member.mobile}</span>
                         </div>
                       </div>
                     </td>
                     <td>
-                      <div className="icon-label" style={{ fontSize: '13px', fontWeight: 500 }}>
+                      <div className="icon-label" style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 500 }}>
                         <CalendarDays size={14} color="var(--text-muted)" />
                         <span>{new Date(member.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                       </div>
                     </td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', color: 'var(--success)', fontWeight: 600 }}>₹{formatCurrency(member.totalSaved)}</span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>₹{formatCurrency(member.monthlyContribution)} / {t('month').toLowerCase()}</span>
+                        <span style={{ fontSize: `calc(13px * var(--text-scale, 1))`, color: 'var(--success)', fontWeight: 600 }}>₹{formatCurrency(member.totalSaved)}</span>
+                        <span style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>₹{formatCurrency(member.monthlyContribution)} / {t('month').toLowerCase()}</span>
                       </div>
                     </td>
                     <td>
                       {member.isCompleted ? (
-                         <span style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '12px' }}>{t('completed')}</span>
+                         <span style={{ color: 'var(--primary)', fontWeight: 600, fontSize: `calc(12px * var(--text-scale, 1))` }}>{t('completed')}</span>
                       ) : member.pendingMonths > 0 ? (
-                        <span style={{ color: 'var(--danger)', fontWeight: 600, fontSize: '12px' }}>
+                        <span style={{ color: 'var(--danger)', fontWeight: 600, fontSize: `calc(12px * var(--text-scale, 1))` }}>
                           {member.pendingMonths} months pending
                         </span>
                       ) : (
-                        <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: '12px' }}>{t('upToDate')}</span>
+                        <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: `calc(12px * var(--text-scale, 1))` }}>{t('upToDate')}</span>
                       )}
                     </td>
                     <td>
-                      <span style={{ fontWeight: 600, fontSize: '13px' }}>{member.paidMonths}</span> <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{t('outOf')} {member.tenureMonths}</span>
+                      <span style={{ fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))` }}>{member.paidMonths}</span> <span style={{ color: 'var(--text-muted)', fontSize: `calc(12px * var(--text-scale, 1))` }}>{t('outOf')} {member.tenureMonths}</span>
                     </td>
                     <td>
                       {member.loanPrincipal > 0 ? (
-                         <span style={{ color: 'var(--danger)', fontWeight: 600, fontSize: '13px' }}>₹{formatCurrency(member.loanPrincipal)}</span>
+                         <span style={{ color: 'var(--danger)', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))` }}>₹{formatCurrency(member.loanPrincipal)}</span>
                       ) : (
                          <span style={{ color: 'var(--text-muted)' }}>--</span>
                       )}
@@ -872,7 +872,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         {member.loanInterest > 0 ? (
-                           <span style={{ color: 'var(--danger)', fontWeight: 600, fontSize: '13px' }}>₹{formatCurrency(member.loanInterest)}</span>
+                           <span style={{ color: 'var(--danger)', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))` }}>₹{formatCurrency(member.loanInterest)}</span>
                         ) : (
                            <span style={{ color: 'var(--text-muted)' }}>--</span>
                         )}
@@ -881,7 +881,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         {member.calculatedLateFee > 0 ? (
-                           <span style={{ color: 'var(--danger)', fontWeight: 600, fontSize: '13px' }}>₹{formatCurrency(member.calculatedLateFee)}</span>
+                           <span style={{ color: 'var(--danger)', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))` }}>₹{formatCurrency(member.calculatedLateFee)}</span>
                         ) : (
                            <span style={{ color: 'var(--text-muted)' }}>--</span>
                         )}
@@ -890,7 +890,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         {member.totalAmountToPay > 0 ? (
-                           <span style={{ color: 'var(--danger)', fontWeight: 700, fontSize: '14px' }}>₹{formatCurrency(member.totalAmountToPay)}</span>
+                           <span style={{ color: 'var(--danger)', fontWeight: 700, fontSize: `calc(14px * var(--text-scale, 1))` }}>₹{formatCurrency(member.totalAmountToPay)}</span>
                         ) : (
                            <span style={{ color: 'var(--text-muted)' }}>--</span>
                         )}
@@ -919,7 +919,7 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                       </div>
                     </td>
                     <td>
-                      <span style={{ color: member.netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 700, fontSize: '13px' }}>
+                      <span style={{ color: member.netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 700, fontSize: `calc(13px * var(--text-scale, 1))` }}>
                         {member.netProfitLossValue < 0 ? '-' : '+'}₹{formatCurrency(Math.abs(member.netProfitLossValue))}
                       </span>
                     </td>
@@ -987,11 +987,11 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
                           zIndex: 100,
                           minWidth: '150px'
                         }}>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Linked Accounts:</div>
+                          <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px' }}>Linked Accounts:</div>
                           {members.filter(m => m.mobile === formData.mobile).map(m => (
                             <div 
                               key={m.id}
-                              style={{ padding: '4px 8px', fontSize: '13px', cursor: 'pointer', borderRadius: '4px', color: 'var(--primary)', fontWeight: 500 }}
+                              style={{ padding: '4px 8px', fontSize: `calc(13px * var(--text-scale, 1))`, cursor: 'pointer', borderRadius: '4px', color: 'var(--primary)', fontWeight: 500 }}
                               onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f0f4f8'}
                               onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                               onClick={(e) => {

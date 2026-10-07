@@ -17,7 +17,7 @@ import { LoginView } from './components/views/LoginView';
 import { TransactionsView } from './components/views/TransactionsView';
 import { GlobalSearch } from './components/views/GlobalSearch';
 import { useI18n } from './locales/i18n';
-import { StorageService } from './engine/storage';
+import { StorageService, storageEvents } from './engine/storage';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth } from './firebase';
 
@@ -32,17 +32,39 @@ function App() {
   const [navParams, setNavParams] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  const [zoomLevel, setZoomLevel] = useState<number>(() => {
-    return parseInt(localStorage.getItem('app_zoom_level') || '100', 10);
-  });
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [textSize, setTextSize] = useState<number>(100);
+
+  useEffect(() => {
+    const handleDbUpdate = () => {
+      const dbSettings = StorageService.getSettings();
+      setZoomLevel(dbSettings.zoomLevel || 100);
+      setTextSize(dbSettings.textSize || 100);
+    };
+    storageEvents.addEventListener('db_updated', handleDbUpdate);
+    handleDbUpdate();
+    return () => storageEvents.removeEventListener('db_updated', handleDbUpdate);
+  }, []);
 
   useEffect(() => {
     (document.body.style as any).zoom = `${zoomLevel}%`;
-    localStorage.setItem('app_zoom_level', zoomLevel.toString());
   }, [zoomLevel]);
 
-  const handleZoomIn = () => setZoomLevel(z => Math.min(z + 10, 200));
-  const handleZoomOut = () => setZoomLevel(z => Math.max(z - 10, 50));
+  useEffect(() => {
+    document.documentElement.style.setProperty('--text-scale', (textSize / 100).toString());
+  }, [textSize]);
+
+  const handleTextSizeIn = () => {
+    const newSize = Math.min(textSize + 10, 200);
+    StorageService.saveSettings({ ...StorageService.getSettings(), textSize: newSize });
+    setTextSize(newSize);
+  };
+  
+  const handleTextSizeOut = () => {
+    const newSize = Math.max(textSize - 10, 80);
+    StorageService.saveSettings({ ...StorageService.getSettings(), textSize: newSize });
+    setTextSize(newSize);
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -142,19 +164,19 @@ function App() {
               borderRadius: '16px',
               transition: 'all 0.3s ease'
             }} />
-            <div style={{ flex: 1, textAlign: 'center', zIndex: 1, fontSize: '13px', fontWeight: 600, color: lang === 'te' ? '#fff' : 'rgba(255,255,255,0.6)', padding: '4px 0', transition: 'color 0.3s' }}>
+            <div style={{ flex: 1, textAlign: 'center', zIndex: 1, fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: lang === 'te' ? '#fff' : 'rgba(255,255,255,0.6)', padding: '4px 0', transition: 'color 0.3s' }}>
               తెలుగు
             </div>
-            <div style={{ flex: 1, textAlign: 'center', zIndex: 1, fontSize: '13px', fontWeight: 600, color: lang === 'en' ? '#fff' : 'rgba(255,255,255,0.6)', padding: '4px 0', transition: 'color 0.3s' }}>
+            <div style={{ flex: 1, textAlign: 'center', zIndex: 1, fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: lang === 'en' ? '#fff' : 'rgba(255,255,255,0.6)', padding: '4px 0', transition: 'color 0.3s' }}>
               English
             </div>
           </div>
         </div>
 
-        {/* Zoom Controls */}
+        {/* Text Size Controls */}
         <div style={{ padding: '0 16px', marginBottom: '24px' }}>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', textAlign: 'center' }}>
-            {t('zoomLabel')}
+          <div style={{ fontSize: `calc(12px * var(--text-scale, 1))`, color: 'rgba(255,255,255,0.6)', marginBottom: '8px', textAlign: 'center' }}>
+            Text Size
           </div>
           <div style={{ 
             display: 'flex', 
@@ -165,15 +187,15 @@ function App() {
             padding: '4px 12px'
           }}>
             <button 
-              onClick={handleZoomOut}
-              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '4px 8px', fontSize: '18px', fontWeight: 'bold' }}
+              onClick={handleTextSizeOut}
+              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '4px 8px', fontSize: `calc(18px * var(--text-scale, 1))`, fontWeight: 'bold' }}
             >
               -
             </button>
-            <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{zoomLevel}%</span>
+            <span style={{ color: '#fff', fontSize: `calc(14px * var(--text-scale, 1))`, fontWeight: 600 }}>{textSize}%</span>
             <button 
-              onClick={handleZoomIn}
-              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '4px 8px', fontSize: '18px', fontWeight: 'bold' }}
+              onClick={handleTextSizeIn}
+              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '4px 8px', fontSize: `calc(18px * var(--text-scale, 1))`, fontWeight: 'bold' }}
             >
               +
             </button>
@@ -244,7 +266,7 @@ function App() {
             <Menu size={24} color="#111827" />
           </button>
           
-          <div style={{ fontWeight: 600, fontSize: '18px', color: '#111827', flex: 1 }}>
+          <div style={{ fontWeight: 600, fontSize: `calc(18px * var(--text-scale, 1))`, color: '#111827', flex: 1 }}>
             {activeView === 'dashboard' && t('overview')}
             {activeView === 'members' && t('membersDir')}
             {activeView === 'transactions' && t('transactions')}
