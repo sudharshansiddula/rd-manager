@@ -260,7 +260,13 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
   
   // Reload members when DB changes
   const loadMembers = () => {
-    setMembers(StorageService.getMembers());
+    const freshMembers = StorageService.getMembers();
+    setMembers(freshMembers);
+    setSelectedMember(prev => {
+      if (!prev) return null;
+      const found = freshMembers.find(m => m.id === prev.id);
+      return found || prev;
+    });
   };
 
   useEffect(() => {
@@ -326,7 +332,9 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       const maxPaidMonthIndex = Math.max(paidMonthsCount, lastPaymentMonthIndex);
       
       const pendingMonths = Math.max(0, monthsElapsed - maxPaidMonthIndex);
-      const isCompleted = totalAmountPaid >= (member.tenureMonths * member.monthlyContribution);
+      const isCompleted = totalAmountPaid >= (member.tenureMonths * member.monthlyContribution) || member.status === 'MATURED';
+      const isPrematureClosed = member.status !== 'ACTIVE' && ((member.status === 'CLOSED' && !isCompleted) || (Boolean(member.closedDate && member.closedDate.trim() !== '') && !isCompleted));
+      const isCompletedClosed = member.status === 'MATURED' || (member.status === 'CLOSED' && isCompleted) || isCompleted;
       const paidMonths = paidMonthsCount;
       const totalSaved = totalAmountPaid;
       
@@ -415,18 +423,28 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       }
 
       const totalAmountToPay = rdDueAmount + loanInterest + calculatedLateFee;
+
+      const isClosed = isPrematureClosed || isCompletedClosed;
+      const effectivePendingMonths = isClosed ? 0 : pendingMonths;
+      const effectiveRdDueAmount = isClosed ? 0 : rdDueAmount;
+      const effectiveLoanPrincipal = isClosed ? 0 : loanPrincipal;
+      const effectiveLoanInterest = isClosed ? 0 : loanInterest;
+      const effectiveCalculatedLateFee = isClosed ? 0 : calculatedLateFee;
+      const effectiveTotalAmountToPay = isClosed ? 0 : totalAmountToPay;
       
       return {
         ...member,
         paidMonths,
         maxPaidMonthIndex,
-        pendingMonths,
+        pendingMonths: effectivePendingMonths,
         isCompleted,
-        rdDueAmount,
-        loanPrincipal,
-        loanInterest,
-        calculatedLateFee,
-        totalAmountToPay,
+        isPrematureClosed,
+        isCompletedClosed,
+        rdDueAmount: effectiveRdDueAmount,
+        loanPrincipal: effectiveLoanPrincipal,
+        loanInterest: effectiveLoanInterest,
+        calculatedLateFee: effectiveCalculatedLateFee,
+        totalAmountToPay: effectiveTotalAmountToPay,
         netProfitLossValue,
         totalSaved
       };
@@ -449,17 +467,17 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       }
 
     if (statusFilter === 'ACTIVE') {
-      result = result.filter(m => m.status === 'ACTIVE');
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed);
     } else if (statusFilter === 'LOAN_ACTIVE') {
       result = result.filter(m => m.loanPrincipal > 0);
     } else if (statusFilter === 'RD_PENDING') {
-      result = result.filter(m => m.status === 'ACTIVE' && m.pendingMonths > 0 && !m.isCompleted);
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed && m.pendingMonths > 0);
     } else if (statusFilter === 'RD_COMPLETED_FULL') {
-      result = result.filter(m => m.status === 'MATURED' || m.isCompleted);
+      result = result.filter(m => m.isCompletedClosed);
     } else if (statusFilter === 'RD_CLOSED_MIDDLE') {
-      result = result.filter(m => m.status === 'CLOSED' && !m.isCompleted);
+      result = result.filter(m => m.isPrematureClosed);
     } else if (statusFilter === 'RD_PAID_UP_TO_DATE') {
-      result = result.filter(m => m.status === 'ACTIVE' && m.pendingMonths <= 0 && !m.isCompleted);
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed && m.pendingMonths <= 0);
     }
 
     if (advancedFilters.dateFrom) {
@@ -481,10 +499,10 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       result = result.filter(m => m.totalSaved <= Number(advancedFilters.savedMax));
     }
     if (advancedFilters.pendingMin) {
-      result = result.filter(m => m.pendingMonths >= Number(advancedFilters.pendingMin));
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed && m.pendingMonths >= Number(advancedFilters.pendingMin));
     }
     if (advancedFilters.pendingMax) {
-      result = result.filter(m => m.pendingMonths <= Number(advancedFilters.pendingMax));
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed && m.pendingMonths <= Number(advancedFilters.pendingMax));
     }
     if (advancedFilters.paidMin) {
       result = result.filter(m => m.paidMonths >= Number(advancedFilters.paidMin));
@@ -493,28 +511,28 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       result = result.filter(m => m.paidMonths <= Number(advancedFilters.paidMax));
     }
     if (advancedFilters.loanMin) {
-      result = result.filter(m => m.loanPrincipal >= Number(advancedFilters.loanMin));
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed && m.loanPrincipal >= Number(advancedFilters.loanMin));
     }
     if (advancedFilters.loanMax) {
-      result = result.filter(m => m.loanPrincipal <= Number(advancedFilters.loanMax));
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed && m.loanPrincipal <= Number(advancedFilters.loanMax));
     }
     if (advancedFilters.interestMin) {
-      result = result.filter(m => m.loanInterest >= Number(advancedFilters.interestMin));
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed && m.loanInterest >= Number(advancedFilters.interestMin));
     }
     if (advancedFilters.interestMax) {
-      result = result.filter(m => m.loanInterest <= Number(advancedFilters.interestMax));
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed && m.loanInterest <= Number(advancedFilters.interestMax));
     }
     if (advancedFilters.lateFeeMin) {
-      result = result.filter(m => m.calculatedLateFee >= Number(advancedFilters.lateFeeMin));
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed && m.calculatedLateFee >= Number(advancedFilters.lateFeeMin));
     }
     if (advancedFilters.lateFeeMax) {
-      result = result.filter(m => m.calculatedLateFee <= Number(advancedFilters.lateFeeMax));
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed && m.calculatedLateFee <= Number(advancedFilters.lateFeeMax));
     }
     if (advancedFilters.totalPayMin) {
-      result = result.filter(m => m.totalAmountToPay >= Number(advancedFilters.totalPayMin));
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed && m.totalAmountToPay >= Number(advancedFilters.totalPayMin));
     }
     if (advancedFilters.totalPayMax) {
-      result = result.filter(m => m.totalAmountToPay <= Number(advancedFilters.totalPayMax));
+      result = result.filter(m => !m.isPrematureClosed && !m.isCompletedClosed && m.totalAmountToPay <= Number(advancedFilters.totalPayMax));
     }
     if (advancedFilters.profitMin) {
       result = result.filter(m => m.netProfitLossValue >= Number(advancedFilters.profitMin));
@@ -531,8 +549,8 @@ export const MembersView = ({ navParams, clearNavParams }: MembersViewProps = {}
       return filtered.reduce((acc, m) => {
         acc.totalMembers++;
         acc.totalSaved += (m.paidMonths * m.monthlyContribution);
-        if (m.pendingMonths > 0 && !m.isCompleted) acc.pendingMembers++;
-        if (m.status === 'ACTIVE') {
+        if (m.pendingMonths > 0 && !m.isCompletedClosed && !m.isPrematureClosed) acc.pendingMembers++;
+        if (!m.isCompletedClosed && !m.isPrematureClosed) {
           acc.activeMembers++;
         }
       if (m.loanPrincipal > 0) {
@@ -1200,13 +1218,47 @@ Do you still want to proceed creating an account for "${formData.name}"?`);
                     className={`hoverable-row ${isHighlighted ? 'highlighted-row' : ''}`}
                   >
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         <strong style={{ 
                           color: isHighlighted ? 'var(--primary-hover)' : 'var(--primary)', 
                           fontSize: `calc(15px * var(--text-scale, 1))` 
                         }}>
                           #{member.memberNumber}
                         </strong>
+                        {member.isPrematureClosed && (
+                          <span style={{
+                            fontSize: `calc(10px * var(--text-scale, 1))`,
+                            padding: '2px 6px',
+                            backgroundColor: '#fee2e2',
+                            color: '#b91c1c',
+                            border: '1px solid #fca5a5',
+                            borderRadius: '5px',
+                            fontWeight: 700,
+                            letterSpacing: '0.2px',
+                            whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center'
+                          }}>
+                            {t('rdPrematureClosedBadge')}
+                          </span>
+                        )}
+                        {member.isCompletedClosed && (
+                          <span style={{
+                            fontSize: `calc(10px * var(--text-scale, 1))`,
+                            padding: '2px 6px',
+                            backgroundColor: '#e0e7ff',
+                            color: '#4338ca',
+                            border: '1px solid #c7d2fe',
+                            borderRadius: '5px',
+                            fontWeight: 700,
+                            letterSpacing: '0.2px',
+                            whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center'
+                          }}>
+                            {t('rdFullyCompletedBadge')}
+                          </span>
+                        )}
                         {isHighlighted && (
                           <span style={{
                             fontSize: `calc(10px * var(--text-scale, 1))`,
@@ -1246,8 +1298,10 @@ Do you still want to proceed creating an account for "${formData.name}"?`);
                       </div>
                     </td>
                     <td>
-                      {member.isCompleted ? (
+                      {member.isCompletedClosed ? (
                          <span style={{ color: 'var(--primary)', fontWeight: 600, fontSize: `calc(12px * var(--text-scale, 1))` }}>{t('completed')}</span>
+                      ) : member.isPrematureClosed ? (
+                        <span style={{ color: 'var(--danger)', fontWeight: 600, fontSize: `calc(12px * var(--text-scale, 1))` }}>{t('closed')}</span>
                       ) : member.pendingMonths > 0 ? (
                         <span style={{ color: 'var(--danger)', fontWeight: 600, fontSize: `calc(12px * var(--text-scale, 1))` }}>
                           {member.pendingMonths} months pending
@@ -1291,7 +1345,7 @@ Do you still want to proceed creating an account for "${formData.name}"?`);
                         ) : (
                            <span style={{ color: 'var(--text-muted)' }}>--</span>
                         )}
-                        {member.pendingMonths > 0 && !member.isCompleted && (
+                        {member.pendingMonths > 0 && !member.isCompletedClosed && !member.isPrematureClosed && (
                           <button
                             onClick={(e) => handleWhatsAppClick(e, member)}
                             style={{

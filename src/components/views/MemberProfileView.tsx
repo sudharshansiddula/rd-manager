@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ArrowLeft, Save, Edit2, Trash2, Phone, MapPin, PiggyBank, Wallet, AlertCircle, Info, X, FileText, Share2, Download, MessageSquare, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Edit2, Trash2, Phone, MapPin, PiggyBank, Wallet, AlertCircle, Info, X, FileText, Share2, Download, MessageSquare, Loader2, CheckCircle, RotateCcw } from 'lucide-react';
 import { useI18n } from '../../locales/i18n';
 import { formatCurrency, buildWhatsAppMessage } from '../../utils';
 import { StorageService, storageEvents } from '../../engine/storage';
@@ -111,7 +111,9 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
   const [loans, setLoans] = useState<Loan[]>([]);
   const [repayments, setRepayments] = useState<LoanRepayment[]>([]);
   const [editRowIdx, setEditRowIdx] = useState<number | null>(null);
-  const [closeDateStr, setCloseDateStr] = useState<string | null>(null);
+  const [closeDateStr, setCloseDateStr] = useState<string | null>(() => {
+    return member.status !== 'ACTIVE' ? (member.closedDate || (member.status === 'CLOSED' ? (member.closedDate || new Date().toISOString().slice(0, 7)) : null)) : null;
+  });
   const [showCalculationModal, setShowCalculationModal] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileFormData, setProfileFormData] = useState({ name: '', mobile: '', address: '', tenureMonths: 72, expectedMaturityAmount: 0 });
@@ -121,8 +123,23 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
 
   const [settlementData, setSettlementData] = useState({
     date: member.settlementDate || '',
-    amountPaid: member.settlementAmountPaid || ''
+    amountPaid: member.settlementAmountPaid !== undefined && member.settlementAmountPaid !== null ? String(member.settlementAmountPaid) : ''
   });
+  const [isEditingSettlement, setIsEditingSettlement] = useState<boolean>(() => {
+    return !(member.settlementDate || (member.settlementAmountPaid !== undefined && member.settlementAmountPaid !== null && member.settlementAmountPaid !== 0));
+  });
+
+  useEffect(() => {
+    if (member.status === 'ACTIVE') {
+      setCloseDateStr(null);
+    } else {
+      setCloseDateStr(member.closedDate || (member.status === 'CLOSED' ? (member.closedDate || new Date().toISOString().slice(0, 7)) : null));
+    }
+    setSettlementData({
+      date: member.settlementDate || '',
+      amountPaid: member.settlementAmountPaid !== undefined && member.settlementAmountPaid !== null ? String(member.settlementAmountPaid) : ''
+    });
+  }, [member.id, member.status, member.closedDate, member.settlementDate, member.settlementAmountPaid]);
 
   const [includeSavings, setIncludeSavings] = useState(true);
   const [includeBonus, setIncludeBonus] = useState(true);
@@ -130,20 +147,68 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
   const [includeInterest, setIncludeInterest] = useState(true);
   const [includeLateFee, setIncludeLateFee] = useState(true);
 
-  const handleSaveSettlement = (field: 'date' | 'amountPaid', value: any) => {
-    setSettlementData(prev => {
-      const updated = { ...prev, [field]: value };
-      const db = StorageService.getDb();
-      const m = db.members.find(x => x.id === member.id);
-      if (m) {
-        if (field === 'date') m.settlementDate = value;
-        if (field === 'amountPaid') m.settlementAmountPaid = Number(value);
-        StorageService.saveDb(db);
-        if (field === 'date') member.settlementDate = value;
-        if (field === 'amountPaid') member.settlementAmountPaid = Number(value);
+  const handleSetCloseDate = (newCloseDate: string) => {
+    setCloseDateStr(newCloseDate);
+    const db = StorageService.getDb();
+    const m = db.members.find(x => x.id === member.id);
+    if (m) {
+      m.status = 'CLOSED';
+      m.closedDate = newCloseDate;
+      member.status = 'CLOSED';
+      member.closedDate = newCloseDate;
+      StorageService.saveDb(db, true);
+    }
+  };
+
+  const handleReopenRD = () => {
+    const confirmMsg = lang === 'te' 
+      ? 'మీరు ఖచ్చితంగా ఈ చిట్టీని తిరిగి కొనసాగించాలనుకుంటున్నారా?' 
+      : 'Are you sure you want to reopen and continue this RD?';
+    if (!window.confirm(confirmMsg)) return;
+
+    setCloseDateStr(null);
+    setSettlementData({ date: '', amountPaid: '' });
+    setIsEditingSettlement(true);
+
+    const db = StorageService.getDb();
+    const m = db.members.find(x => x.id === member.id);
+    if (m) {
+      m.status = 'ACTIVE';
+      delete m.closedDate;
+      delete (m as any).closedDate;
+      delete m.settlementDate;
+      delete (m as any).settlementDate;
+      delete m.settlementAmountPaid;
+      delete (m as any).settlementAmountPaid;
+
+      member.status = 'ACTIVE';
+      delete member.closedDate;
+      delete (member as any).closedDate;
+      delete member.settlementDate;
+      delete (member as any).settlementDate;
+      delete member.settlementAmountPaid;
+      delete (member as any).settlementAmountPaid;
+
+      StorageService.saveDb(db, true);
+    }
+  };
+
+  const handleCommitSettlement = () => {
+    const db = StorageService.getDb();
+    const m = db.members.find(x => x.id === member.id);
+    if (m) {
+      m.settlementDate = settlementData.date || '';
+      if (settlementData.amountPaid !== '' && settlementData.amountPaid !== undefined) {
+        m.settlementAmountPaid = Number(settlementData.amountPaid);
+      } else {
+        delete m.settlementAmountPaid;
+        delete (m as any).settlementAmountPaid;
       }
-      return updated;
-    });
+      member.settlementDate = m.settlementDate;
+      member.settlementAmountPaid = m.settlementAmountPaid;
+      StorageService.saveDb(db, true);
+    }
+    setIsEditingSettlement(false);
   };
 
   const currentMonthRowRef = useRef<HTMLTableRowElement>(null);
@@ -193,6 +258,18 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
   const totalLoanPrincipal = loans.reduce((sum, l) => sum + (l.principalAmount || 0), 0);
   const currentLoanBal = totalLoanPrincipal - totalPrincipalRepaid;
 
+  const isCompleted = totalSaved >= (member.tenureMonths * member.monthlyContribution) || member.status === 'MATURED';
+  const isPrematureClosed = member.status !== 'ACTIVE' && (Boolean(closeDateStr && closeDateStr.trim() !== '') || member.status === 'CLOSED') && !isCompleted;
+  const isFullyCompletedClosed = isCompleted || member.status === 'MATURED';
+
+  let closureMonthIndex = Infinity;
+  if (isPrematureClosed && closeDateStr) {
+    const cDate = new Date(closeDateStr);
+    const startDate = new Date(member.startDate);
+    closureMonthIndex = (cDate.getFullYear() - startDate.getFullYear()) * 12 + (cDate.getMonth() - startDate.getMonth()) + 1;
+    if (closureMonthIndex < 1) closureMonthIndex = 1;
+  }
+
   // Build the table data
   const rows = useMemo(() => {
     const settings = StorageService.getSettings();
@@ -223,8 +300,12 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
       });
       const loanDisbursedThisMonth = loansThisMonth.reduce((s, l) => s + l.principalAmount, 0);
 
-      // Interest is calculated on the running balance *before* this month's disbursement
-      const monthlyInterest = runningLoanBal > 0 ? Math.round((runningLoanBal * loanInterestRate) / 100) : 0;
+      // Check if this month is past closure
+      const isPastClosure = closureMonthIndex < Infinity && i > closureMonthIndex;
+
+      // Interest is calculated on the running balance *before* this month's disbursement (stop after closure)
+      const monthlyInterest = (!isPastClosure && runningLoanBal > 0) ? Math.round((runningLoanBal * loanInterestRate) / 100) : 0;
+      const prevInterestArrears = Math.max(0, runningInterestDue);
       runningInterestDue += monthlyInterest;
 
       const expectedInterest = runningInterestDue;
@@ -232,6 +313,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
       runningLoanBal += loanDisbursedThisMonth;
 
       const updatedAt = inst?.updatedAt || rep?.createdAt || null;
+      const interestDueRemaining = Math.max(0, expectedInterest - interestPaid);
 
       const row = {
         monthIndex: i,
@@ -242,19 +324,22 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
         lateFee,
         principalPaid,
         interestPaid,
+        monthlyInterest,
+        prevInterestArrears,
         expectedInterest,
+        interestDueRemaining,
         totalPaid: rdAmount + lateFee + principalPaid + interestPaid,
         loanBalAfter: runningLoanBal - principalPaid,
         updatedAt
       };
 
       runningLoanBal -= principalPaid;
-      runningInterestDue -= interestPaid;
+      runningInterestDue = Math.max(0, runningInterestDue - interestPaid);
 
       result.push(row);
     }
     return result;
-  }, [member, installments, repayments, loans]);
+  }, [member, installments, repayments, loans, closureMonthIndex]);
 
   const handleEditClick = (idx: number, row: any) => {
     setEditRowIdx(idx);
@@ -522,8 +607,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
   const totalAmountDueThisMonth = pendingRDAmount + remainingInterestDue + calculatedLateFee;
 
   // Settlement Logic
-  const isCompleted = totalSaved >= (member.tenureMonths * member.monthlyContribution);
-  const isSettlementMode = isCompleted || closeDateStr !== null;
+  const isSettlementMode = isCompleted || isPrematureClosed || member.status === 'CLOSED' || member.status === 'MATURED';
 
   const n = member.tenureMonths;
 
@@ -603,17 +687,17 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
         expectedMaturityAmount: member.expectedMaturityAmount
       },
       currentDues: {
-        pendingRDAmount,
-        pendingRDMonths,
+        pendingRDAmount: isSettlementMode ? 0 : pendingRDAmount,
+        pendingRDMonths: isSettlementMode ? 0 : pendingRDMonths,
         monthlyContribution: member.monthlyContribution,
-        remainingInterestDue,
-        pendingLoanMonths,
+        remainingInterestDue: isSettlementMode ? 0 : remainingInterestDue,
+        pendingLoanMonths: isSettlementMode ? 0 : pendingLoanMonths,
         loanInterestRate,
-        calculatedLateFee: Math.round(calculatedLateFee),
+        calculatedLateFee: isSettlementMode ? 0 : Math.round(calculatedLateFee),
         lateFineRate: settings.lateFine?.rate ?? 2,
-        lateFineMonths: lateFineMonthsCount,
-        totalAmountDueThisMonth,
-        currentLoanBal
+        lateFineMonths: isSettlementMode ? 0 : lateFineMonthsCount,
+        totalAmountDueThisMonth: isSettlementMode ? 0 : totalAmountDueThisMonth,
+        currentLoanBal: isSettlementMode ? 0 : currentLoanBal
       },
       summary: {
         paidMonthsCount,
@@ -621,25 +705,28 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
         totalSaved,
         totalLoanTaken: sumLoanDisbursed,
         totalPrincipalRepaid: sumPrincipalPaid,
-        currentLoanBal,
+        currentLoanBal: isSettlementMode ? 0 : currentLoanBal,
         totalInterestPaid: sumInterestPaid,
         totalLateFeePaid: sumLateFee,
         grandTotalPaid: sumTotalPaid,
         expectedMaturityAmount: member.expectedMaturityAmount || (member.tenureMonths * member.monthlyContribution)
       },
-      rows: rows.map(r => ({
-        monthIndex: r.monthIndex,
-        monthStr: r.monthStr,
-        rdAmount: r.rdAmount,
-        depositorDetails: r.depositorDetails,
-        loanDisbursed: r.loanDisbursed,
-        principalPaid: r.principalPaid,
-        interestPaid: r.interestPaid,
-        lateFee: r.lateFee,
-        totalPaid: r.totalPaid,
-        loanBalAfter: r.loanBalAfter,
-        updatedAt: r.updatedAt ? Number(r.updatedAt) : undefined
-      })),
+      rows: rows.map(r => {
+        const isPastClosure = closureMonthIndex < Infinity && r.monthIndex > closureMonthIndex;
+        return {
+          monthIndex: r.monthIndex,
+          monthStr: r.monthStr,
+          rdAmount: r.rdAmount,
+          depositorDetails: r.depositorDetails,
+          loanDisbursed: r.loanDisbursed,
+          principalPaid: r.principalPaid,
+          interestPaid: r.interestPaid,
+          lateFee: r.lateFee,
+          totalPaid: r.totalPaid,
+          loanBalAfter: (!isPastClosure && (r.monthIndex <= monthsElapsed || r.monthIndex <= closureMonthIndex)) ? r.loanBalAfter : 0,
+          updatedAt: r.updatedAt ? Number(r.updatedAt) : undefined
+        };
+      }),
       totals: {
         sumRD: totalSaved,
         sumLoanDisbursed,
@@ -734,10 +821,45 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
               <ArrowLeft size={18} />
             </button>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: `calc(24px * var(--text-scale, 1))`, fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
-                  {member.name} <span style={{ fontSize: `calc(16px * var(--text-scale, 1))`, color: 'var(--primary)' }}>(#{member.memberNumber})</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: `calc(24px * var(--text-scale, 1))`, fontWeight: 700, margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span>{member.name}</span>
+                  <span style={{ fontSize: `calc(16px * var(--text-scale, 1))`, color: 'var(--primary)' }}>(#{member.memberNumber})</span>
                 </h2>
+                {isPrematureClosed && (
+                  <span style={{
+                    backgroundColor: '#fee2e2',
+                    color: '#b91c1c',
+                    border: '1px solid #fca5a5',
+                    padding: '3px 10px',
+                    borderRadius: '12px',
+                    fontSize: `calc(12px * var(--text-scale, 1))`,
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}>
+                    <AlertCircle size={13} />
+                    {t('rdPrematureClosedDesc')} {closeDateStr ? `(${closeDateStr})` : ''}
+                  </span>
+                )}
+                {isFullyCompletedClosed && (
+                  <span style={{
+                    backgroundColor: '#e0e7ff',
+                    color: '#4338ca',
+                    border: '1px solid #c7d2fe',
+                    padding: '3px 10px',
+                    borderRadius: '12px',
+                    fontSize: `calc(12px * var(--text-scale, 1))`,
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}>
+                    <CheckCircle size={13} />
+                    {t('rdFullyCompletedDesc')}
+                  </span>
+                )}
                 <div style={{ display: 'flex', gap: '4px' }}>
                   <button onClick={() => {
                     setProfileFormData({ name: member.name, mobile: member.mobile || '', address: member.address || '', tenureMonths: member.tenureMonths || 72, expectedMaturityAmount: member.expectedMaturityAmount || 0 });
@@ -914,37 +1036,82 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
               </div>
             </div>
           </div>
-          {!isCompleted && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: closeDateStr ? '#fff0f0' : '#f8f9fa', border: `1px solid ${closeDateStr ? 'var(--danger)' : 'var(--border)'}`, borderRadius: '8px' }}>
-              {closeDateStr ? (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            padding: '10px 14px',
+            background: closeDateStr ? '#fff0f0' : (isCompleted ? '#eef2ff' : '#f8f9fa'),
+            border: `1px solid ${closeDateStr ? 'var(--danger)' : (isCompleted ? '#c7d2fe' : 'var(--border)')}`,
+            borderRadius: '8px',
+            alignSelf: 'flex-start'
+          }}>
+            {closeDateStr ? (
+              <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)' }}>Closed on:</span>
+                  <span style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--danger)' }}>
+                    {lang === 'te' ? 'క్లోజ్ చేసిన తేదీ:' : 'Closed on:'}
+                  </span>
                   <input
                     type="month"
                     value={closeDateStr}
                     min={minMonth}
                     max={maxMonth}
-                    onChange={e => setCloseDateStr(e.target.value)}
+                    onChange={e => handleSetCloseDate(e.target.value)}
                     style={{ padding: '4px 8px', border: '1px solid var(--danger)', borderRadius: '4px', fontSize: `calc(13px * var(--text-scale, 1))` }}
                   />
-                  <button onClick={() => setCloseDateStr(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                    <X size={16} />
+                </div>
+                {/* Reopen / Continue RD Button right under the date */}
+                <div style={{ marginTop: '8px' }}>
+                  <button
+                    onClick={handleReopenRD}
+                    className="btn"
+                    style={{
+                      fontSize: `calc(12px * var(--text-scale, 1))`,
+                      fontWeight: 600,
+                      color: '#15803d',
+                      background: '#dcfce7',
+                      border: '1px solid #86efac',
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer'
+                    }}
+                    title={lang === 'te' ? 'ఈ చిట్టీని తిరిగి యాక్టివ్ చేసి కొనసాగించండి' : 'Reopen and continue this RD'}
+                  >
+                    <RotateCcw size={14} />
+                    <span>{t('reopenRD')}</span>
                   </button>
                 </div>
-              ) : (
-                <button
-                  onClick={() => {
-                    const d = new Date();
-                    setCloseDateStr(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-                  }}
-                  className="btn"
-                  style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: 'var(--text-main)', background: '#fff', border: '1px solid var(--border)', padding: '6px 12px' }}
-                >
-                  {t('prematureClose')}
-                </button>
-              )}
-            </div>
-          )}
+              </div>
+            ) : isCompleted ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#4338ca', fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))` }}>
+                <CheckCircle size={16} />
+                <span>{lang === 'te' ? 'ఆర్డీ కాలపరిమితి పూర్తయింది (Matured)' : 'RD Full Term Completed (Matured)'}</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  const d = new Date();
+                  const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                  handleSetCloseDate(dateStr);
+                }}
+                className="btn"
+                style={{
+                  fontSize: `calc(13px * var(--text-scale, 1))`,
+                  fontWeight: 600,
+                  color: 'var(--text-main)',
+                  background: '#fff',
+                  border: '1px solid var(--border)',
+                  padding: '6px 12px'
+                }}
+              >
+                {t('prematureClose')}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Dashboards Section */}
@@ -990,7 +1157,12 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
               </div>
               <div>
                 <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('monthsPaidDash')}</div>
-                <div style={{ fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))` }}>{paidMonthsCount} / {member.tenureMonths}</div>
+                <div style={{ fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))` }}>
+                  {paidMonthsCount} / {member.tenureMonths}
+                  <span style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 500, marginLeft: '4px' }}>
+                    ({t('remainingMonthsText')}: {Math.max(0, member.tenureMonths - paidMonthsCount)})
+                  </span>
+                </div>
               </div>
               <div>
                 <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('savedSoFar')}</div>
@@ -1016,9 +1188,14 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
 
           {/* Loan Dashboard */}
           <div className="card" style={{ flex: '1 1 300px', padding: '16px', borderLeft: '4px solid var(--danger)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)', flexWrap: 'wrap' }}>
               <Wallet size={18} />
               <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('loanDetails')}</strong>
+              {isSettlementMode && (
+                <span style={{ fontSize: `calc(10px * var(--text-scale, 1))`, padding: '2px 7px', backgroundColor: '#e2e8f0', color: '#475569', borderRadius: '10px', fontWeight: 600 }}>
+                  {t('settlementDetailsSaved')}
+                </span>
+              )}
               <div title={t('loanTooltip')} style={{ cursor: 'help', display: 'flex', marginLeft: 'auto' }}>
                 <Info size={16} color="var(--danger)" />
               </div>
@@ -1026,19 +1203,71 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
               <div>
                 <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('remainingPrincipal')}</div>
-                <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: currentLoanBal > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(currentLoanBal)}</div>
+                <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: !isSettlementMode && currentLoanBal > 0 ? 'var(--danger)' : 'var(--text-main)' }}>
+                  {isSettlementMode ? (
+                    <div>
+                      <span>₹0</span>
+                      {currentLoanBal > 0 && (
+                        <div style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 500 }}>
+                          (₹{formatCurrency(currentLoanBal)} {t('adjustedInSettlement')})
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    `₹${formatCurrency(currentLoanBal)}`
+                  )}
+                </div>
               </div>
               <div>
                 <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('interestDueDash')}</div>
-                <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: remainingInterestDue > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(remainingInterestDue)}</div>
+                <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: !isSettlementMode && remainingInterestDue > 0 ? 'var(--danger)' : 'var(--text-main)' }}>
+                  {isSettlementMode ? (
+                    <div>
+                      <span>₹0</span>
+                      {remainingInterestDue > 0 && (
+                        <div style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 500 }}>
+                          (₹{formatCurrency(remainingInterestDue)} {t('adjustedInSettlement')})
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    `₹${formatCurrency(remainingInterestDue)}`
+                  )}
+                </div>
               </div>
               <div>
                 <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('lblLateFee')}</div>
-                <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: calculatedLateFee > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(calculatedLateFee)}</div>
+                <div style={{ fontWeight: 600, fontSize: `calc(14px * var(--text-scale, 1))`, color: !isSettlementMode && calculatedLateFee > 0 ? 'var(--danger)' : 'var(--text-main)' }}>
+                  {isSettlementMode ? (
+                    <div>
+                      <span>₹0</span>
+                      {calculatedLateFee > 0 && (
+                        <div style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--text-muted)', fontWeight: 500 }}>
+                          (₹{formatCurrency(calculatedLateFee)} {t('adjustedInSettlement')})
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    `₹${formatCurrency(calculatedLateFee)}`
+                  )}
+                </div>
               </div>
               <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: '12px' }}>
                 <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('totalAmountToPay')}</div>
-                <div style={{ fontWeight: 700, fontSize: `calc(15px * var(--text-scale, 1))`, color: (currentLoanBal + remainingInterestDue + calculatedLateFee) > 0 ? 'var(--danger)' : 'var(--text-main)' }}>₹{formatCurrency(currentLoanBal + remainingInterestDue + calculatedLateFee)}</div>
+                <div style={{ fontWeight: 700, fontSize: `calc(15px * var(--text-scale, 1))`, color: !isSettlementMode && (currentLoanBal + remainingInterestDue + calculatedLateFee) > 0 ? 'var(--danger)' : 'var(--text-main)' }}>
+                  {isSettlementMode ? (
+                    <div>
+                      <span style={{ color: 'var(--success)' }}>₹0</span>
+                      {(currentLoanBal + remainingInterestDue + calculatedLateFee) > 0 && (
+                        <div style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--success)', fontWeight: 500 }}>
+                          {t('adjustedInSettlement')}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    `₹${formatCurrency(currentLoanBal + remainingInterestDue + calculatedLateFee)}`
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -1046,9 +1275,11 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
           {/* Due / Settlement Dashboard */}
           {isSettlementMode ? (
             <div className="card" style={{ flex: '1 1 300px', padding: '16px', borderLeft: '4px solid var(--danger)', backgroundColor: '#fff0f0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)', flexWrap: 'wrap' }}>
                 <AlertCircle size={18} />
-                <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('finalSettlement')} {closeDateStr ? '(Premature)' : '(Completed)'}</strong>
+                <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>
+                  {t('finalSettlement')} {closeDateStr ? `(${lang === 'te' ? 'మధ్యంతర క్లోజ్' : 'Premature'})` : `(${lang === 'te' ? 'పూర్తయింది' : 'Completed'})`}
+                </strong>
                 <div title={t('settlementTooltip')} style={{ cursor: 'help', display: 'flex', marginLeft: 'auto' }}>
                   <Info size={16} color="var(--danger)" />
                 </div>
@@ -1112,32 +1343,124 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
               </div>
               
               <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed var(--danger)' }}>
-                <div style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)', marginBottom: '8px' }}>
-                  {t('settlementPaymentDetails')}
-                </div>
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px' }}>{t('datePaid')}</div>
-                    <input 
-                      type="date" 
-                      className="input-compact" 
-                      value={settlementData.date} 
-                      onChange={(e) => handleSaveSettlement('date', e.target.value)}
-                    />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+                  <div style={{ fontSize: `calc(13px * var(--text-scale, 1))`, fontWeight: 600, color: pendingRDMonths > 0 ? 'var(--danger)' : 'var(--success)' }}>
+                    {t('settlementPaymentDetails')}
                   </div>
-                  <div>
-                    <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                      {netSettlement >= 0 ? t('amountPaidToMember') : t('amountPaidToUs')}
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    {!isEditingSettlement ? (
+                      <button
+                        onClick={() => setIsEditingSettlement(true)}
+                        className="btn"
+                        style={{
+                          fontSize: `calc(11px * var(--text-scale, 1))`,
+                          padding: '3px 8px',
+                          background: '#ffffff',
+                          border: '1px solid var(--border)',
+                          color: 'var(--primary)',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          cursor: 'pointer'
+                        }}
+                        title={lang === 'te' ? 'సెటిల్మెంట్ వివరాలు సవరించు' : 'Edit settlement details'}
+                      >
+                        <Edit2 size={12} />
+                        {t('edit')}
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={handleCommitSettlement}
+                          className="btn btn-primary"
+                          style={{
+                            fontSize: `calc(11px * var(--text-scale, 1))`,
+                            padding: '3px 10px',
+                            fontWeight: 600,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            cursor: 'pointer'
+                          }}
+                          title={lang === 'te' ? 'సెటిల్మెంట్ వివరాలు సేవ్ చేయి' : 'Save settlement details'}
+                        >
+                          <Save size={12} />
+                          {t('save')}
+                        </button>
+                        {(member.settlementDate || (member.settlementAmountPaid !== undefined && member.settlementAmountPaid !== null)) && (
+                          <button
+                            onClick={() => {
+                              setSettlementData({
+                                date: member.settlementDate || '',
+                                amountPaid: member.settlementAmountPaid !== undefined && member.settlementAmountPaid !== null ? String(member.settlementAmountPaid) : ''
+                              });
+                              setIsEditingSettlement(false);
+                            }}
+                            className="btn"
+                            style={{
+                              fontSize: `calc(11px * var(--text-scale, 1))`,
+                              padding: '3px 8px',
+                              background: '#ffffff',
+                              border: '1px solid var(--border)',
+                              color: 'var(--text-muted)',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {!isEditingSettlement && (settlementData.date || settlementData.amountPaid) ? (
+                  <div style={{ display: 'flex', gap: '20px', alignItems: 'center', background: '#ffffff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #fecaca', flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{t('datePaid')}</div>
+                      <div style={{ fontWeight: 600, fontSize: `calc(13px * var(--text-scale, 1))` }}>
+                        {settlementData.date ? new Date(settlementData.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                      </div>
                     </div>
-                    <input 
-                      type="number" 
-                      className="input-compact" 
-                      value={settlementData.amountPaid} 
-                      onChange={(e) => handleSaveSettlement('amountPaid', e.target.value)}
-                      placeholder="Enter amount"
-                    />
+                    <div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>
+                        {netSettlement >= 0 ? t('amountPaidToMember') : t('amountPaidToUs')}
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: `calc(14px * var(--text-scale, 1))`, color: 'var(--success)' }}>
+                        {settlementData.amountPaid ? `₹${formatCurrency(Number(settlementData.amountPaid))}` : '-'}
+                      </div>
+                    </div>
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--success)', fontSize: `calc(11px * var(--text-scale, 1))`, fontWeight: 600 }}>
+                      <CheckCircle size={14} />
+                      <span>{t('settlementDetailsSaved')}</span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px' }}>{t('datePaid')}</div>
+                      <input 
+                        type="date" 
+                        className="input-compact" 
+                        value={settlementData.date} 
+                        onChange={(e) => setSettlementData(prev => ({ ...prev, date: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                        {netSettlement >= 0 ? t('amountPaidToMember') : t('amountPaidToUs')}
+                      </div>
+                      <input 
+                        type="number" 
+                        className="input-compact" 
+                        value={settlementData.amountPaid} 
+                        onChange={(e) => setSettlementData(prev => ({ ...prev, amountPaid: e.target.value }))}
+                        placeholder="Enter amount"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -1183,9 +1506,43 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
 
           {/* Transactions / P&L Dashboard */}
           <div className="card" style={{ flex: '1 1 300px', padding: '16px', borderLeft: `4px solid ${netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)'}`, backgroundColor: netProfitLossValue >= 0 ? '#f6ffed' : '#fff0f0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)', flexWrap: 'wrap' }}>
               <Wallet size={18} />
               <strong style={{ fontSize: `calc(14px * var(--text-scale, 1))` }}>{t('transactionsCardTitle')}</strong>
+              {isPrematureClosed && (
+                <span style={{
+                  fontSize: `calc(11px * var(--text-scale, 1))`,
+                  padding: '2px 8px',
+                  backgroundColor: '#fee2e2',
+                  color: '#b91c1c',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '10px',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <AlertCircle size={11} />
+                  {t('rdPrematureClosedBadge')}
+                </span>
+              )}
+              {isFullyCompletedClosed && (
+                <span style={{
+                  fontSize: `calc(11px * var(--text-scale, 1))`,
+                  padding: '2px 8px',
+                  backgroundColor: '#e0e7ff',
+                  color: '#4338ca',
+                  border: '1px solid #c7d2fe',
+                  borderRadius: '10px',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <CheckCircle size={11} />
+                  {t('rdFullyCompletedBadge')}
+                </span>
+              )}
               <div title={isSettlementMode ? t('transactionsCardTooltipSettled') : t('transactionsCardTooltipActive')} style={{ cursor: 'help', display: 'flex', marginLeft: 'auto' }}>
                 <Info size={16} color={netProfitLossValue >= 0 ? 'var(--success)' : 'var(--danger)'} />
               </div>
@@ -1301,24 +1658,31 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                     const isEditing = editRowIdx === idx;
                     const isCurrentMonth = idx === Math.max(0, monthsElapsed - 1);
                     const isTarget = targetMonthIndex ? r.monthIndex === targetMonthIndex : false;
+                    const isClosureMonth = closureMonthIndex < Infinity && r.monthIndex === closureMonthIndex;
+                    const isPastClosure = closureMonthIndex < Infinity && r.monthIndex > closureMonthIndex;
+                    const showRemainingLoan = !isPastClosure && (r.monthIndex <= monthsElapsed || r.monthIndex <= closureMonthIndex) && (r.loanBalAfter > 0);
 
                     return (
                       <tr
                         key={r.monthIndex}
-                        className="hoverable-row"
+                        className={`hoverable-row ${isPastClosure ? 'closed-row' : ''}`}
                         ref={isTarget ? targetRowRef : (isCurrentMonth && !targetMonthIndex ? currentMonthRowRef : null)}
                         style={{
                           ...(isCurrentMonth ? { backgroundColor: '#f0f7ff', borderLeft: '4px solid var(--primary)' } : {}),
+                          ...(isClosureMonth ? { backgroundColor: '#fff0f0', borderLeft: '4px solid #ef4444', outline: '1px solid #fca5a5' } : {}),
+                          ...(isPastClosure ? { backgroundColor: '#fff5f5', borderLeft: '4px solid #ef4444', color: '#991b1b' } : {}),
                           ...(isTarget ? { backgroundColor: '#fffbe6', outline: '2px solid var(--warning)', outlineOffset: '-2px' } : {}),
                           ...(isEditing ? { backgroundColor: '#f6ffed', outline: '2px solid var(--success)', outlineOffset: '-2px' } : {})
                         }}
                       >
                         <td>
-                          <div style={{ fontWeight: 600 }}>
-                            {r.monthStr}
-                            {isCurrentMonth && <span style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--primary)', marginLeft: '6px', padding: '2px 6px', background: '#e3f2fd', borderRadius: '10px' }}>Current</span>}
+                          <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                            <span>{r.monthStr}</span>
+                            {isCurrentMonth && <span style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--primary)', padding: '2px 6px', background: '#e3f2fd', borderRadius: '10px' }}>Current</span>}
+                            {isClosureMonth && <span style={{ fontSize: `calc(9px * var(--text-scale, 1))`, color: '#b91c1c', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>{t('closedMonthBadge')}</span>}
+                            {isPastClosure && <span style={{ fontSize: `calc(9px * var(--text-scale, 1))`, color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>{t('closedRowBadge')}</span>}
                           </div>
-                          <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>M-{r.monthIndex}</div>
+                          <div style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: isPastClosure ? '#f87171' : 'var(--text-muted)' }}>M-{r.monthIndex}</div>
                         </td>
 
                         {isEditing ? (
@@ -1352,7 +1716,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                             </td>
                             <td style={{ textAlign: 'right' }}><input id={`loanDisbursed-${r.monthIndex}`} type="number" className="input-compact" value={rowEdits.loanDisbursed === 0 ? '' : rowEdits.loanDisbursed} onChange={e => setRowEdits({ ...rowEdits, loanDisbursed: Number(e.target.value) })} onKeyDown={e => handleKeyDown(e, 'loanDisbursed', r.monthIndex)} style={{ width: '80px', textAlign: 'right' }} /></td>
                             <td style={{ textAlign: 'right' }}><input id={`principalPaid-${r.monthIndex}`} type="number" className="input-compact" value={rowEdits.principalPaid === 0 ? '' : rowEdits.principalPaid} onChange={e => setRowEdits({ ...rowEdits, principalPaid: Number(e.target.value) })} onKeyDown={e => handleKeyDown(e, 'principalPaid', r.monthIndex)} style={{ width: '80px', textAlign: 'right' }} /></td>
-                            <td style={{ textAlign: 'right' }}>
+                            <td style={{ textAlign: 'right', verticalAlign: 'top' }}>
                               <input id={`interestPaid-${r.monthIndex}`} type="number" className="input-compact" value={rowEdits.interestPaid === 0 ? '' : rowEdits.interestPaid} onChange={e => setRowEdits({ ...rowEdits, interestPaid: Number(e.target.value) })} onKeyDown={e => handleKeyDown(e, 'interestPaid', r.monthIndex)} style={{ width: '80px', textAlign: 'right' }} />
                               {r.expectedInterest > 0 && rowEdits.interestPaid < r.expectedInterest && (
                                 <div 
@@ -1360,10 +1724,30 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                                     const due = r.expectedInterest - rowEdits.interestPaid;
                                     if (due > 0) setRowEdits({ ...rowEdits, interestPaid: rowEdits.interestPaid + due });
                                   }}
-                                  style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--warning)', marginTop: '2px', cursor: 'pointer' }}
-                                  title="Click to autofill"
+                                  style={{ 
+                                    fontSize: `calc(10.5px * var(--text-scale, 1))`, 
+                                    color: '#b45309', 
+                                    backgroundColor: '#fef3c7',
+                                    border: '1px solid #fde68a',
+                                    borderRadius: '4px',
+                                    padding: '3px 6px',
+                                    marginTop: '3px', 
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    lineHeight: '1.25'
+                                  }}
+                                  title={lang === 'te' ? 'క్లిక్ చేసి మొత్తం డ్యూని ఆటోఫిల్ చేయండి' : 'Click to autofill total due'}
                                 >
-                                  Due: ₹{formatCurrency(r.expectedInterest - rowEdits.interestPaid)}
+                                  <div style={{ fontWeight: 700, color: '#b91c1c' }}>
+                                    {lang === 'te' ? 'డ్యూ' : 'Due'}: ₹{formatCurrency(r.expectedInterest - rowEdits.interestPaid)}
+                                  </div>
+                                  {r.prevInterestArrears > 0 && (
+                                    <div style={{ fontSize: `calc(9.5px * var(--text-scale, 1))`, color: '#78350f', whiteSpace: 'nowrap' }}>
+                                      {lang === 'te' 
+                                        ? `(${t('oldInterestArrears')}: ₹${formatCurrency(r.prevInterestArrears)} + ${t('thisMonthInterestText')}: ₹${formatCurrency(r.monthlyInterest)})`
+                                        : `(${t('oldInterestArrears')}: ₹${formatCurrency(r.prevInterestArrears)} + ${t('thisMonthInterestText')}: ₹${formatCurrency(r.monthlyInterest)})`}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </td>
@@ -1383,7 +1767,7 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                               )}
                             </td>
                             <td style={{ fontWeight: 600, textAlign: 'right' }}>₹{formatCurrency(rowEdits.rdAmount + rowEdits.principalPaid + rowEdits.interestPaid + rowEdits.lateFee)}</td>
-                            <td style={{ fontWeight: 600, textAlign: 'right', color: r.loanBalAfter > 0 ? 'inherit' : 'var(--text-muted)' }}>{r.loanBalAfter > 0 ? `₹${formatCurrency(r.loanBalAfter)}` : '-'}</td>
+                            <td style={{ fontWeight: 600, textAlign: 'right', color: (!isPastClosure && r.loanBalAfter > 0) ? 'inherit' : 'var(--text-muted)' }}>{(!isPastClosure && r.loanBalAfter > 0) ? `₹${formatCurrency(r.loanBalAfter)}` : '-'}</td>
                             <td style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--text-muted)', textAlign: 'center', lineHeight: '1.2' }}>
                               {r.updatedAt ? (
                                 <>
@@ -1409,11 +1793,32 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                             <td style={{ textAlign: 'left', fontSize: `calc(11px * var(--text-scale, 1))`, color: 'var(--text-muted)' }}>{r.depositorDetails || '-'}</td>
                             <td style={{ textAlign: 'right', color: r.loanDisbursed > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>{r.loanDisbursed > 0 ? `₹${formatCurrency(r.loanDisbursed)}` : '-'}</td>
                             <td style={{ textAlign: 'right', color: r.principalPaid > 0 ? 'var(--primary)' : 'var(--text-muted)' }}>{r.principalPaid > 0 ? `₹${formatCurrency(r.principalPaid)}` : '-'}</td>
-                            <td style={{ textAlign: 'right', color: r.interestPaid > 0 ? 'inherit' : 'var(--text-muted)' }}>{r.interestPaid > 0 ? `₹${formatCurrency(r.interestPaid)}` : '-'}</td>
-                            <td style={{ textAlign: 'right', color: r.lateFee > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>{r.lateFee > 0 ? `₹${formatCurrency(r.lateFee)}` : '-'}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: r.totalPaid > 0 ? 'inherit' : 'var(--text-muted)' }}>{r.totalPaid > 0 ? `₹${formatCurrency(r.totalPaid)}` : '-'}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: (r.monthIndex <= monthsElapsed && r.loanBalAfter > 0) ? 'inherit' : 'var(--text-muted)' }}>{(r.monthIndex <= monthsElapsed && r.loanBalAfter > 0) ? `₹${formatCurrency(r.loanBalAfter)}` : '-'}</td>
-                            <td style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: 'var(--text-muted)', textAlign: 'center', lineHeight: '1.2' }}>
+                            <td style={{ textAlign: 'right', verticalAlign: 'middle' }}>
+                              <div style={{ color: r.interestPaid > 0 ? 'inherit' : 'var(--text-muted)', fontWeight: r.interestPaid > 0 ? 600 : 400 }}>
+                                {r.interestPaid > 0 ? `₹${formatCurrency(r.interestPaid)}` : '-'}
+                              </div>
+                              {!isPastClosure && (r.monthIndex <= monthsElapsed || r.interestPaid > 0 || r.principalPaid > 0 || r.rdAmount > 0) && r.expectedInterest > 0 && r.interestDueRemaining > 0 && (
+                                <div 
+                                  style={{ 
+                                    fontSize: `calc(10.5px * var(--text-scale, 1))`, 
+                                    color: '#dc2626', 
+                                    fontWeight: 700, 
+                                    marginTop: '2px', 
+                                    whiteSpace: 'nowrap' 
+                                  }}
+                                  title={lang === 'te' 
+                                    ? `ఈ నెలకు రావలసిన మొత్తం వడ్డీ: ₹${formatCurrency(r.expectedInterest)}, చెల్లించినది: ₹${formatCurrency(r.interestPaid)}, మిగిలిన బకాయి: ₹${formatCurrency(r.interestDueRemaining)}`
+                                    : `Expected: ₹${formatCurrency(r.expectedInterest)}, Paid: ₹${formatCurrency(r.interestPaid)}, Due: ₹${formatCurrency(r.interestDueRemaining)}`
+                                  }
+                                >
+                                  ({t('interestDueBadge')}: ₹{formatCurrency(r.interestDueRemaining)})
+                                </div>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'right', color: r.lateFee > 0 ? 'var(--danger)' : (isPastClosure ? '#fca5a5' : 'var(--text-muted)') }}>{r.lateFee > 0 ? `₹${formatCurrency(r.lateFee)}` : '-'}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600, color: r.totalPaid > 0 ? 'inherit' : (isPastClosure ? '#fca5a5' : 'var(--text-muted)') }}>{r.totalPaid > 0 ? `₹${formatCurrency(r.totalPaid)}` : '-'}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600, color: showRemainingLoan ? 'inherit' : (isPastClosure ? '#fca5a5' : 'var(--text-muted)') }}>{showRemainingLoan ? `₹${formatCurrency(r.loanBalAfter)}` : '-'}</td>
+                            <td style={{ fontSize: `calc(10px * var(--text-scale, 1))`, color: isPastClosure ? '#fca5a5' : 'var(--text-muted)', textAlign: 'center', lineHeight: '1.2' }}>
                               {r.updatedAt ? (
                                 <>
                                   <div style={{ whiteSpace: 'nowrap' }}>{new Date(r.updatedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
@@ -1422,14 +1827,20 @@ export const MemberProfileView = ({ member, onBack, targetMonthIndex }: MemberPr
                               ) : '-'}
                             </td>
                             <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                              <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                                <button className="btn" style={{ background: 'transparent', padding: '4px' }} onClick={() => handleEditClick(idx, r)}>
-                                  <Edit2 size={16} color="var(--primary)" />
-                                </button>
-                                <button className="btn" style={{ background: 'transparent', padding: '4px' }} onClick={() => handleClearRow(r.monthIndex)}>
-                                  <Trash2 size={16} color="var(--danger)" />
-                                </button>
-                              </div>
+                              {isPastClosure ? (
+                                <span style={{ fontSize: `calc(11px * var(--text-scale, 1))`, color: '#ef4444', fontWeight: 600, fontStyle: 'italic' }}>
+                                  {t('closedStatusText')}
+                                </span>
+                              ) : (
+                                <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                  <button className="btn" style={{ background: 'transparent', padding: '4px' }} onClick={() => handleEditClick(idx, r)}>
+                                    <Edit2 size={16} color="var(--primary)" />
+                                  </button>
+                                  <button className="btn" style={{ background: 'transparent', padding: '4px' }} onClick={() => handleClearRow(r.monthIndex)}>
+                                    <Trash2 size={16} color="var(--danger)" />
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           </>
                         )}

@@ -66,17 +66,17 @@ const localT = {
   ttTotalOwed: { en: 'Total amount the firm owes to the members (RD Collected + Bonus Payable).', te: 'సంస్థ సభ్యులకు ఇవ్వాల్సిన మొత్తం డబ్బు (పొదుపు + బోనస్).' },
   ttLoanGiven: { en: 'Total principal amount given as loans to the members.', te: 'సభ్యులకు అప్పుగా ఇచ్చిన మొత్తం అసలు డబ్బు.' },
   ttLoanRecovered: { en: 'Total loan principal amount that has been recovered so far.', te: 'ఇప్పటి వరకు వసూలైన మొత్తం అప్పు (అసలు) డబ్బు.' },
-  ttOutstandingLoan: { en: 'Remaining principal amount given as loans that is yet to be recovered.', te: 'ఇంకా వసూలు కావాల్సిన మిగిలిన అప్పు (అసలు) మొత్తం.' },
-  ttIntPending: { en: 'Loan interest that has been earned but not yet collected.', te: 'రుణాలపై సృష్టించబడి, ఇంకా వసూలు కాని బకాయి వడ్డీ.' },
-  ttPendingRD: { en: 'Total RD installments that are overdue and yet to be paid by the members.', te: 'సభ్యులు కట్టాల్సిన, ఇంకా కట్టని పెండింగ్ పొదుపు (RD) వాయిదాలు.' },
-  ttFutureRD: { en: 'RD contributions expected in the future based on the remaining tenure of all members.', te: 'సభ్యుల మిగిలిన గడువు ఆధారంగా భవిష్యత్తులో రాబోయే ఆశించిన పొదుపు.' },
+  ttOutstandingLoan: { en: 'Remaining principal amount of active loans that is yet to be recovered (excludes loans settled/cleared in closed accounts).', te: 'యాక్టివ్ సభ్యుల నుండి ఇంకా వసూలు కావాల్సిన మిగిలిన అప్పు (అసలు) మొత్తం (క్లోజ్ అయిన ఖాతాలలో సెటిల్మెంట్ ద్వారా అడ్జస్ట్ అయిన అప్పులు మినహాయించబడ్డాయి).' },
+  ttIntPending: { en: 'Loan interest pending to be collected from active loan borrowers.', te: 'యాక్టివ్ అప్పు ఉన్న సభ్యుల నుండి ఇంకా వసూలు కాని బకాయి వడ్డీ.' },
+  ttPendingRD: { en: 'Total RD installments that are overdue and yet to be paid by active members.', te: 'యాక్టివ్ సభ్యులు కట్టాల్సిన, ఇంకా కట్టని పెండింగ్ పొదుపు (RD) వాయిదాలు.' },
+  ttFutureRD: { en: 'RD contributions expected in the future from active members.', te: 'యాక్టివ్ సభ్యుల మిగిలిన గడువు ఆధారంగా భవిష్యత్తులో రాబోయే ఆశించిన పొదుపు.' },
   ttFutureInt: { en: 'Loan interest expected in the future assuming current outstanding loans remain until the end of the members tenure.', te: 'ప్రస్తుతం ఉన్న అప్పులు సభ్యుల గడువు ముగిసేవరకు ఉంటే భవిష్యత్తులో వచ్చే ఆశించిన వడ్డీ.' },
   ttTotalExpectedIncome: { en: 'Sum of Future Expected RD and Future Expected Loan Interest.', te: 'భవిష్యత్తులో రాబోయే పొదుపు మరియు భవిష్యత్తులో రాబోయే వడ్డీల మొత్తం.' },
   ttFutureBonus: { en: 'Additional bonus that will be payable to members at maturity based on their future contributions.', te: 'సభ్యులు భవిష్యత్తులో కట్టే పొదుపుపై గడువు తీరిన తర్వాత వారికి అదనంగా ఇవ్వాల్సిన బోనస్.' },
   ttTotalIntCol: { en: 'Total loan interest actually collected from the members till date.', te: 'సభ్యుల నుండి ఇప్పటి వరకు నిజంగా వసూలైన మొత్తం లోన్ వడ్డీ.' },
   ttLateFeeCol: { en: 'Total late fines collected from the members for delayed payments.', te: 'ఆలస్యంగా చెల్లించినందుకు సభ్యుల నుండి వసూలైన మొత్తం లేట్ ఫైన్.' },
   ttActualIncome: { en: 'Total Actual Income generated (Interest Collected + Late Fine Collected).', te: 'సంస్థకు వచ్చిన వాస్తవ ఆదాయం (వసూలైన వడ్డీ + లేట్ ఫైన్).' },
-  ttActualOutflow: { en: 'Total actual outflow including bonus for active members and final settlements paid to closed members.', te: 'సభ్యులకు ఇవ్వాల్సిన బోనస్ మరియు క్లోజ్ అయిన సభ్యులకు చెల్లించిన ఫైనల్ సెటిల్మెంట్ల మొత్తం. ఇది సంస్థకు అయ్యే వాస్తవ ఖర్చు.' },
+  ttActualOutflow: { en: 'Total actual outflow including bonus for active members and bonus paid to closed members in settlements.', te: 'యాక్టివ్ సభ్యులకు ఇవ్వాల్సిన బోనస్ మరియు సెటిల్మెంట్ ద్వారా క్లోజ్ అయిన సభ్యులకు ఇచ్చిన బోనస్ మొత్తం. ఇది సంస్థకు అయ్యే వాస్తవ ఖర్చు.' },
   ttNetPosition: { en: 'Net Position = Actual Income - Actual Outflow. Shows if the firm is currently in Profit or Loss.', te: 'నికర స్థితి = వాస్తవ ఆదాయం - వాస్తవ ఖర్చు. సంస్థ ప్రస్తుతం లాభంలో ఉందా లేదా నష్టంలో ఉందా అని తెలుపుతుంది.' },
   ttTotalCashCol: { en: 'Sum of all money received: RD + Loan Principal Recovered + Loan Interest Collected + Late Fine Collected.', te: 'వచ్చిన మొత్తం డబ్బు: పొదుపు + వసూలైన అప్పు అసలు + వసూలైన వడ్డీ + లేట్ ఫైన్.' },
   ttCashInHand: { en: 'Total Money Collected - Total Loans Given. Shows the actual physical cash available.', te: 'మొత్తం వసూలైన డబ్బు - ఇచ్చిన మొత్తం అప్పు. ప్రస్తుతం చేతిలో ఉన్న నగదు (Cash) ని తెలుపుతుంది.' }
@@ -154,11 +154,12 @@ export const DashboardView = () => {
             const data = e.data.result;
             
             const statusData = [
-              { name: getT(lang, 'statusCollected'), value: data.completedMembers, fill: '#3b82f6' },
-              { name: 'Up to Date', value: data.onTimeMembers, fill: '#10b981' },
-              { name: 'RD Pending', value: data.pendingMembers, fill: '#ef4444' },
-              { name: 'Active Loan', value: data.hasLoanMembers, fill: '#f59e0b' }
-            ];
+              { name: lang === 'te' ? 'పూర్తయినవారు' : 'Completed', value: data.completedMembers, fill: '#3b82f6' },
+              { name: lang === 'te' ? 'క్లోజ్ అయినవారు' : 'Closed', value: data.closedMembers, fill: '#64748b' },
+              { name: lang === 'te' ? 'సమయానికి ఉన్నవారు' : 'Up to Date', value: data.onTimeMembers, fill: '#10b981' },
+              { name: lang === 'te' ? 'ఆర్డీ పెండింగ్' : 'RD Pending', value: data.pendingMembers, fill: '#ef4444' },
+              { name: lang === 'te' ? 'అప్పు ఉన్నవారు' : 'Active Loan', value: data.hasLoanMembers, fill: '#f59e0b' }
+            ].filter((d: any) => d.value > 0);
             
             const chartData = data.chartData.map((v: any) => ({
               month: v.name,
@@ -212,6 +213,16 @@ export const DashboardView = () => {
     });
     (db.loanRepayments || []).forEach(r => {
       if ((r.principalPaid > 0 || r.interestPaid > 0) && r.createdAt) list.push({ type: 'REP', date: r.createdAt, amount: r.principalPaid + r.interestPaid, memberId: r.memberId });
+    });
+    (db.members || []).forEach(m => {
+      if (m.settlementAmountPaid && m.settlementDate) {
+        list.push({ 
+          type: 'SETTLEMENT', 
+          date: new Date(m.settlementDate).getTime(), 
+          amount: Number(m.settlementAmountPaid), 
+          memberId: m.id 
+        });
+      }
     });
     list.sort((a, b) => b.date - a.date);
     return list.slice(0, 5);
@@ -544,12 +555,13 @@ export const DashboardView = () => {
                 if (txn.type === 'RD') { typeStr = getT(lang, 'rdPaid'); color = '#10b981'; }
                 if (txn.type === 'LOAN') { typeStr = getT(lang, 'loanGiven'); color = '#ef4444'; }
                 if (txn.type === 'REP') { typeStr = getT(lang, 'loanRepayment'); color = '#3b82f6'; }
+                if (txn.type === 'SETTLEMENT') { typeStr = lang === 'te' ? 'సెటిల్మెంట్' : 'Settlement'; color = '#8b5cf6'; }
 
                 return (
                   <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
                     <td style={{ padding: '10px 0', color: '#4b5563' }}>{d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                     <td style={{ fontWeight: 500, color: '#111827' }}>{member?.name || 'Unknown'}</td>
-                    <td><Badge text={typeStr} type={txn.type === 'RD' ? 'success' : txn.type === 'LOAN' ? 'danger' : 'info'} /></td>
+                    <td><Badge text={typeStr} type={txn.type === 'RD' ? 'success' : txn.type === 'LOAN' ? 'danger' : txn.type === 'SETTLEMENT' ? 'warning' : 'info'} /></td>
                     <td style={{ textAlign: 'right', fontWeight: 600, color }}>₹{formatCurrency(txn.amount)}</td>
                   </tr>
                 );

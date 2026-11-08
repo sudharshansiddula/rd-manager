@@ -16,6 +16,7 @@ export interface Member {
   lastWhatsappSentDate?: string;
   settlementDate?: string;
   settlementAmountPaid?: number;
+  closedDate?: string; // YYYY-MM or YYYY-MM-DD
 }
 
 export interface RDInstallment {

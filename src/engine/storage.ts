@@ -73,7 +73,9 @@ const flushToFirestore = async () => {
   if (!currentUserId) return;
   try {
     const docRef = doc(firestoreDb, 'rd_manager_users', currentUserId);
-    await setDoc(docRef, memoryDb);
+    // Sanitize data by stripping any undefined fields, which Firestore setDoc rejects
+    const cleanDb = JSON.parse(JSON.stringify(memoryDb));
+    await setDoc(docRef, cleanDb);
     console.log("Firestore successfully synced.");
   } catch (err) {
     console.error("Firestore immediate save error:", err);
@@ -137,7 +139,7 @@ export const StorageService = {
 
           console.log('No data found on server. Initializing with local/default data...');
           isLoadedFromServer = true;
-          setDoc(docRef, memoryDb).catch(err => console.error("Initial Firestore save error:", err));
+          setDoc(docRef, JSON.parse(JSON.stringify(memoryDb))).catch(err => console.error("Initial Firestore save error:", err));
           storageEvents.dispatchEvent(new Event('db_updated'));
         }
       }, (error) => {
@@ -231,12 +233,16 @@ export const StorageService = {
     this.saveDb(db, true);
   },
 
+  async flush(): Promise<void> {
+    await flushToFirestore();
+  },
+
   // ---------------- MEMBERS ----------------
   getMembers(): Member[] {
     return [...(this.getDb().members || [])];
   },
 
-  saveMember(member: Member) {
+  saveMember(member: Member, immediate = false) {
     const db = this.getDb();
     if (!db.members) db.members = [];
     const idx = db.members.findIndex(m => m.id === member.id);
@@ -245,7 +251,7 @@ export const StorageService = {
     } else {
       db.members.push(member);
     }
-    this.saveDb(db);
+    this.saveDb(db, immediate);
   },
 
   deleteMember(memberId: string) {

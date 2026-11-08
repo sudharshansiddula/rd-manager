@@ -30,6 +30,7 @@ export interface DashboardStatsResult {
   onTimeMembers: number;
   pendingMembers: number;
   completedMembers: number;
+  closedMembers: number;
   hasLoanMembers: number;
   pendingInterestMembers: number;
   chartData: any[];
@@ -95,9 +96,12 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
   let totalBonusPayable = 0;
   let activeRDCollected = 0;
   let activeBonusPayable = 0;
+  let settledBonusPaid = 0;
   let totalSettlementPaid = 0;
   let totalLoanGiven = 0;
   let totalLoanRecovered = 0;
+  let totalCashLoanRepaid = 0;
+  let totalCashInterestPaid = 0;
   let totalLoanInterestEarned = 0;
   let totalLoanInterestCollected = 0;
   let totalPendingRDAmount = 0;
@@ -107,8 +111,11 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
   let futureBonusExpected = 0;
   let futureInterestExpected = 0;
 
-  let onTimeMembers = 0, pendingMembers = 0, completedMembers = 0;
+  let onTimeMembers = 0, pendingMembers = 0, completedMembers = 0, closedMembers = 0;
   let hasLoanMembers = 0, pendingInterestMembers = 0;
+
+  let activeOutstandingLoan = 0;
+  let activeLoanInterestPending = 0;
 
   const membersList: Member[] = db.members || [];
   const installments: RDInstallment[] = db.installments || [];
@@ -176,35 +183,68 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
     totalRDCollected += mRDCollected;
     totalLateFineCollected += mLateFine;
 
+    const isCompleted = mRDCollected >= (m.tenureMonths * m.monthlyContribution) || m.status === 'MATURED';
+    const isPrematureClosed = m.status !== 'ACTIVE' && ((m.status === 'CLOSED' && !isCompleted) || (Boolean(m.closedDate && m.closedDate.trim() !== '') && !isCompleted));
+    const isSettlementMode = m.status === 'CLOSED' || m.status === 'MATURED' || Boolean(m.closedDate && m.closedDate.trim() !== '');
+
     const pendingMonthsCount = Math.max(0, monthsElapsed - maxPaidMonthIndex);
-    const mPendingRD = pendingMonthsCount > 0 ? pendingMonthsCount * m.monthlyContribution : 0;
-    totalPendingRDAmount += mPendingRD;
+    const mPendingRD = (!isSettlementMode && pendingMonthsCount > 0) ? pendingMonthsCount * m.monthlyContribution : 0;
+    
+    // Only active members have pending RD amount
+    if (!isSettlementMode) {
+      totalPendingRDAmount += mPendingRD;
+    }
 
-    const isCompleted = maxPaidMonthIndex >= m.tenureMonths;
-    if (isCompleted) completedMembers++;
-    else if (mPendingRD > 0) pendingMembers++;
-    else onTimeMembers++;
+    // Accurate Member Status categorization
+    if (isCompleted || m.status === 'MATURED') {
+      completedMembers++;
+    } else if (isPrematureClosed) {
+      closedMembers++;
+    } else if (mPendingRD > 0) {
+      pendingMembers++;
+    } else {
+      onTimeMembers++;
+    }
 
-    const rdCalc = calculateRdInterest(mInsts, m.tenureMonths, m.monthlyContribution, m.expectedMaturityAmount, monthsElapsed);
+    // RD Interest / Bonus calculation
+    let closeMonthIndex = Infinity;
+    if (m.closedDate && m.closedDate.trim() !== '') {
+      const cDate = new Date(m.closedDate);
+      closeMonthIndex = (cDate.getFullYear() - start.getFullYear()) * 12 + (cDate.getMonth() - start.getMonth()) + 1;
+      if (closeMonthIndex < 1) closeMonthIndex = 1;
+    }
+
+    let calculationMonths = monthsElapsed;
+    if (closeMonthIndex < Infinity) {
+      calculationMonths = Math.max(closeMonthIndex, maxPaidMonthIndex);
+    } else if (isCompleted) {
+      calculationMonths = Math.max(m.tenureMonths, monthsElapsed);
+    }
+
+    const rdCalc = calculateRdInterest(mInsts, m.tenureMonths, m.monthlyContribution, m.expectedMaturityAmount, calculationMonths);
     const earnedBonus = rdCalc.totalInterest;
     totalBonusPayable += earnedBonus;
 
-    const isSettlementMode = m.status === 'CLOSED' || m.status === 'MATURED';
     if (isSettlementMode) {
+      settledBonusPaid += earnedBonus;
       const settlementPaid = m.settlementAmountPaid ? Number(m.settlementAmountPaid) : 0;
-      totalSettlementPaid += settlementPaid;
+      if (settlementPaid > 0) {
+        totalSettlementPaid += settlementPaid;
+      }
     } else {
       activeRDCollected += mRDCollected;
       activeBonusPayable += earnedBonus;
+
+      // Future expectations are ONLY for active members
+      const remainingMonths = Math.max(0, m.tenureMonths - monthsElapsed);
+      futureRDExpected += (remainingMonths * m.monthlyContribution);
+      
+      const totalEstimatedFinalValue = m.expectedMaturityAmount;
+      const futureBonus = totalEstimatedFinalValue - (rdCalc.currentBalance + (remainingMonths * m.monthlyContribution));
+      if (futureBonus > 0) futureBonusExpected += futureBonus;
     }
 
-    const remainingMonths = Math.max(0, m.tenureMonths - monthsElapsed);
-    futureRDExpected += (remainingMonths * m.monthlyContribution);
-    
-    const totalEstimatedFinalValue = m.expectedMaturityAmount;
-    const futureBonus = totalEstimatedFinalValue - (rdCalc.currentBalance + (remainingMonths * m.monthlyContribution));
-    if (futureBonus > 0) futureBonusExpected += futureBonus;
-
+    // Loans and Interest
     let mLoanGiven = 0;
     mLoans.forEach(l => {
       mLoanGiven += l.principalAmount;
@@ -220,17 +260,13 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
       if (r.createdAt && r.principalPaid > 0) addToMonth(r.createdAt, 'loanRepaid', r.principalPaid);
       if (r.createdAt && r.interestPaid > 0) addToMonth(r.createdAt, 'intCollected', r.interestPaid);
     });
-    totalLoanRecovered += mLoanRecovered;
-    totalLoanInterestCollected += mIntCollected;
+
+    totalCashLoanRepaid += mLoanRecovered;
+    totalCashInterestPaid += mIntCollected;
 
     const mCurrentBal = Math.max(0, mLoanGiven - mLoanRecovered);
-    if (mCurrentBal > 0) {
-      hasLoanMembers++;
-      if (remainingMonths > 0) {
-        futureInterestExpected += Math.round(mCurrentBal * (loanInterestRate / 100) * remainingMonths);
-      }
-    }
 
+    // Interest earned over months (stops after closure)
     let runningLoanBal = 0;
     let mIntEarned = 0;
     for (let i = 1; i <= monthsElapsed; i++) {
@@ -241,7 +277,8 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
       });
       const loanDisbursedThisMonth = loansThisMonth.reduce((s, l) => s + l.principalAmount, 0);
       
-      const monthlyInterest = runningLoanBal > 0 ? Math.round((runningLoanBal * loanInterestRate) / 100) : 0;
+      const isPastClosure = closeMonthIndex < Infinity && i > closeMonthIndex;
+      const monthlyInterest = (!isPastClosure && runningLoanBal > 0) ? Math.round((runningLoanBal * loanInterestRate) / 100) : 0;
       mIntEarned += monthlyInterest;
       runningLoanBal += loanDisbursedThisMonth;
       
@@ -251,21 +288,46 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
     }
     totalLoanInterestEarned += mIntEarned;
 
-    if ((mIntEarned - mIntCollected) > 0) pendingInterestMembers++;
+    if (isSettlementMode) {
+      // In settlement, remaining loan balance and pending interest are adjusted and settled!
+      totalLoanRecovered += mLoanRecovered + mCurrentBal;
+      const remainingInt = Math.max(0, mIntEarned - mIntCollected);
+      totalLoanInterestCollected += mIntCollected + remainingInt;
+    } else {
+      totalLoanRecovered += mLoanRecovered;
+      totalLoanInterestCollected += mIntCollected;
+
+      if (mCurrentBal > 0) {
+        hasLoanMembers++;
+        activeOutstandingLoan += mCurrentBal;
+        const remainingMonths = Math.max(0, m.tenureMonths - monthsElapsed);
+        if (remainingMonths > 0) {
+          futureInterestExpected += Math.round(mCurrentBal * (loanInterestRate / 100) * remainingMonths);
+        }
+      }
+
+      const pendingInt = Math.max(0, mIntEarned - mIntCollected);
+      if (pendingInt > 0) {
+        pendingInterestMembers++;
+        activeLoanInterestPending += pendingInt;
+      }
+    }
   });
 
   const totalOwedToMembers = activeRDCollected + activeBonusPayable;
-  const totalOutstandingLoan = Math.max(0, totalLoanGiven - totalLoanRecovered);
-  const totalLoanInterestPending = Math.max(0, totalLoanInterestEarned - totalLoanInterestCollected);
+  // Outstanding loan principal: only truly unrecovered loans of ACTIVE members
+  const totalOutstandingLoan = activeOutstandingLoan;
+  // Pending loan interest: only uncollected interest of ACTIVE members
+  const totalLoanInterestPending = activeLoanInterestPending;
   
   const totalExpectedFutureIncome = futureRDExpected + futureInterestExpected;
   const totalExpectedFutureLiability = futureRDExpected + futureBonusExpected;
 
   const actualIncome = totalLoanInterestCollected + totalLateFineCollected;
-  const actualOutflow = activeBonusPayable + totalSettlementPaid;
+  const actualOutflow = activeBonusPayable + settledBonusPaid;
   const netPosition = actualIncome - actualOutflow;
 
-  const totalCashIn = totalRDCollected + totalLoanRecovered + totalLoanInterestCollected + totalLateFineCollected;
+  const totalCashIn = totalRDCollected + totalCashLoanRepaid + totalCashInterestPaid + totalLateFineCollected;
   const totalCashOut = totalLoanGiven + totalSettlementPaid;
   const cashInHand = totalCashIn - totalCashOut;
 
@@ -313,6 +375,7 @@ function calculateDashboardStats(db: any, settings: AppSettings): DashboardStats
     onTimeMembers,
     pendingMembers,
     completedMembers,
+    closedMembers,
     hasLoanMembers,
     pendingInterestMembers,
     chartData
