@@ -12,7 +12,7 @@ RD Manager is a financial tracking application designed for managing Recurring D
 - **Icons**: Lucide React
 - **Charts**: Recharts
 - **Database & Sync**: Firebase Firestore with IndexedDB (`enableIndexedDbPersistence`).
-- **Deployment**: GitHub Pages via GitHub Actions.
+- **Deployment**: Firebase Hosting (Live at: `https://rd-manager-4b40e.web.app`). GitHub serves as the primary secure cloud backup repository.
 
 ## 3. Storage Architecture (State Management)
 The application avoids heavy state management libraries like Redux and instead uses a custom lightweight Event-Driven pattern tied directly to Firebase.
