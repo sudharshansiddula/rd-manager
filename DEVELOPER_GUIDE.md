@@ -40,10 +40,13 @@ The UI is designed to be a professional financial dashboard that is simple enoug
 1. **Dashboard (`DashboardView.tsx`)**: 
    - Provides a 10-second glance at the total financial position.
    - Calculates Cash-in-Hand, Profit & Loss, Future Expected Income, and Total Liabilities.
-   - Includes Recharts for Monthly Cash Flow Analysis.
+   - Financial Reconciliation: Only includes active loans and active interest dues in operational outstanding figures; settled members' liabilities are resolved through final settlement.
+   - Includes Recharts for Monthly Cash Flow Analysis and a 5-way Member Status Distribution (including Prematurely Closed members in slate `#64748b`).
 2. **Member Profile (`MemberProfileView.tsx`)**: 
    - A detailed month-by-month ledger.
-   - **Smart Autofill**: The due amounts (RD, Interest, Late Fees) are shown as clickable suggestions below the input fields. Clicking them automatically fills the pending amount into the field.
+   - **Smart Autofill & Due Breakdown**: The due amounts (RD, Interest, Late Fees) are shown as clickable suggestions below the input fields. For loan interest, it displays an explicit breakdown: `డ్యూ: ₹... (పాత బకాయి: ₹... + ఈ నెల: ₹...)`. Clicking autofills the combined total into the field.
+   - **Visual Interest Arrears Indicator**: In the monthly table view, if an active loan month has paid interest less than the expected interest, a bold red badge `(బకాయి: ₹...)` is shown beneath the paid figure.
+   - **Account Closure & Final Settlement Card**: Displays a dedicated summary card for completed chits and premature closures. Includes toggling between a locked "Saved" view and "Edit" mode, as well as a "తిరిగి కొనసాగించు" (Reopen RD) button.
 3. **Responsive Tables**: Uses CSS wrappers to allow horizontal scrolling on mobile devices while keeping the layout intact.
 
 ## 5. Core Business Logic & Calculations
@@ -54,22 +57,31 @@ The RD bonus (interest) is calculated using an iterative approximation of the Fu
 - It then calculates the accrued interest month-by-month based on the actual amounts paid.
 - **Source**: `calculateRdInterest` in `DashboardView.tsx` / `MemberProfileView.tsx`.
 
-### Loan Interest Calculation
+### Loan Interest Calculation & Arrears Tracking
 - Loans are calculated on a **Simple Interest on Reducing Balance** method.
 - **Logic**: 
   - `Remaining Principal = Total Loan Disbursed - Principal Repaid`.
   - `Monthly Interest = Remaining Principal * (Interest Rate / 100)`.
 - Interest is charged at the start of each month based on the closing balance of the previous month.
+- **Arrears Tracking**: If interest paid is less than the calculated interest, the shortfall is tracked and surfaced as `(బకాయి: ₹...)` in the ledger table, and added to `prevInterestArrears` for subsequent months.
 
 ### Late Fine Calculation
 Late fees are calculated based on user-defined settings (Daily, Monthly, Yearly).
 - **Logic**: Penalty is applied as a percentage on the *Total Pending Arrears* (Unpaid RD + Unpaid Interest) at the time of the due date.
 
-### Final Settlement
+### Final Settlement & Account Closure Lifecycle
 When an account is closed (Prematurely or at Maturity):
 - **Payable to Member**: Total RD Saved + Bonus Earned till date.
 - **Deductions**: Remaining Loan Principal + Pending Loan Interest + Late Fees.
 - **Net Settlement**: `Payable - Deductions`. If positive, the firm pays the member. If negative, the member pays the firm.
+- **Settlement Persistence & Reopen**:
+  - Saved settlement details lock the card to prevent accidental edits until the "Edit" button is clicked.
+  - When reopened via "తిరిగి కొనసాగించు", `closedDate`, `settlementDate`, and `settlementAmountPaid` are safely deleted, and `status` is restored to `ACTIVE`. A deep sanitization strips `undefined` keys to ensure clean Firestore serialization.
+
+### Dashboard Reconciliation for Settled Accounts
+- Active loan and pending interest metrics strictly filter for `status === 'ACTIVE'` members since closed members have had their loans cleared/deducted via settlement.
+- Cash in Hand accounts for all actual cash inflows minus disbursements and cash settlements paid.
+- Firm P&L accounts for historical revenues (interest + fines) minus active accrued bonus obligations and actual bonuses paid to settled members.
 
 ## 6. Language & Internationalization (i18n)
 - The app supports dynamic switching between **English** and **Telugu**.

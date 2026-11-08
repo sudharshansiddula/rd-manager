@@ -31,6 +31,7 @@ export interface Member {
   expectedMaturityAmount: number;  // Maturity target amount (A)
   settlementAmountPaid?: number;   // Final amount paid/received on closure
   settlementDate?: string;         // ISO date when settled
+  closedDate?: string;             // ISO date/month when RD was closed ("YYYY-MM-DD" or "YYYY-MM")
   lastWhatsappSentDate?: string;   // ISO date of last due reminder sent
   createdAt: number;               // Unix epoch timestamp (ms)
 }
@@ -174,6 +175,23 @@ function calculateRdInterest(
    $$\text{Running Principal} \mathrel{-}= \text{Principal Paid}$$
    $$\text{Running Interest Due} \mathrel{-}= \text{Interest Paid}$$
 
+### 4.2. Shortfall Detection & Visual Arrears Tracking
+
+1. **Shortfall Detection in Monthly Ledger Table (Read-Only Mode):**
+   - For every month where a loan is active (`monthlyInterest > 0`), if the actual interest paid is less than the calculated interest (`interestPaid < monthlyInterest`), the system detects an interest shortfall:
+     $$\text{Shortfall} = \text{monthlyInterest} - \text{interestPaid}$$
+   - A bold red indicator is rendered directly below the paid interest figure:
+     `(బకాయి: ₹{shortfall})` (`#dc2626`, font-size: `0.72rem`, bold), making underpayments immediately visible without having to switch to edit mode.
+2. **Dynamic Suggestion & Arrears Breakdown in Edit Mode:**
+   - In edit mode, when editing Month $t$, the interest input suggestion helper computes:
+     - `prevInterestArrears`: Cumulative unpaid interest from Month $1$ to Month $t-1$.
+     - `thisMonthInterest`: Expected interest for Month $t$ based on current active principal.
+     - `totalExpected = prevInterestArrears + thisMonthInterest`.
+   - The UI displays an informative breakdown helper below the "అప్పు పై వడ్డీ" text field:
+     - If `prevInterestArrears > 0`: `డ్యూ: ₹{totalExpected} (పాత బకాయి: ₹{prevInterestArrears} + ఈ నెల: ₹{thisMonthInterest})`
+     - If `prevInterestArrears == 0`: `డ్యూ: ₹{totalExpected}`
+   - Clicking this suggestion autofills `totalExpected` directly into the interest input field.
+
 ---
 
 ## 5. Late Fee (Penalty) Calculation Logic
@@ -204,18 +222,67 @@ function calculateRdInterest(
   - $\text{Net P&L} \ge 0 \implies$ **Green (`var(--success)`)** with label **`Net Profit` (`నికర లాభం`)** and `📈`
   - $\text{Net P&L} < 0 \implies$ **Red (`var(--danger)`)** with label **`Net Loss` (`నికర నష్టం`)** and `📉`
 
+### 6.1. Aggregate P&L Reconciliation across Active and Settled Members
+- **Actual Revenue (Income):**
+  $$\text{Total Income} = \sum \text{All Historical Loan Interest Paid} + \sum \text{All Late Fees Paid}$$
+- **Actual Expenditure / Liabilities (Outflow):**
+  $$\text{Total Outflow} = \sum_{\text{ACTIVE}} \text{Accrued RD Bonus} + \sum_{\text{CLOSED/SETTLED}} \text{Actual Bonus Paid in Settlement}$$
+- **Net Firm Position:**
+  $$\text{Net P&L} = \text{Total Income} - \text{Total Outflow}$$
+
 ---
 
-## 7. Account Completion & Settlement Logic
+## 7. Account Completion, Premature Closure & Settlement Lifecycle
 
-### 7.1. Completion Check
-$$\text{isCompleted} = \text{Total RD Amount Paid} \ge (\text{Tenure Months} \cdot \text{Monthly Contribution})$$
-*Note: Evaluated based on total accumulated deposits to allow bulk/advance payments.*
+### 7.1. Maturity Completion vs Premature Closure
+- **Completed (Matured) RD:**
+  $$\text{isCompleted} = (\text{status} \equiv \text{'MATURED'}) \lor (\text{Total RD Amount Paid} \ge \text{Tenure Months} \cdot \text{Monthly Contribution})$$
+- **Prematurely Closed RD:**
+  $$\text{isPrematureClosed} = (\text{status} \not\equiv \text{'ACTIVE'}) \land (\text{status} \equiv \text{'CLOSED'}) \land \neg\text{isCompleted}$$
+  Recorded with an explicit `closedDate` timestamp or month string.
+- **Visual Status Card in Member Profile:**
+  When a member account is closed (either completed or premature), the Member Profile View displays a prominent status card:
+  - Header badge indicates whether it is a **Completed Chit (`పూర్తయిన చిట్టి`)** or **Premature Closure (`మద్యంతరంగా ముగింపు`)**.
+  - Displays the Date of Closure (`ముగింపు తేదీ`), Final Settlement Details, and action buttons.
 
-### 7.2. Final Settlement Calculation
-$$\text{Total Payable to Member} = \text{Active Savings Amount} + \text{Earned Bonus}$$
-$$\text{Total Deductions} = \text{Remaining Loan Principal} + \text{Pending Loan Interest} + \text{Late Fee}$$
-$$\mathbf{\text{Net Settlement Amount}} = \text{Total Payable to Member} - \text{Total Deductions}$$
+### 7.2. Final Settlement Calculation & Edit/Save Toggling
+1. **Settlement Formula:**
+   $$\text{Total Payable to Member} = \text{Active Savings Amount} + \text{Earned Bonus}$$
+   $$\text{Total Deductions} = \text{Remaining Loan Principal} + \text{Pending Loan Interest} + \text{Late Fee}$$
+   $$\mathbf{\text{Net Settlement Amount}} = \text{Total Payable to Member} - \text{Total Deductions}$$
+   - If $\text{Net Settlement} \ge 0$, the firm pays the member.
+   - If $\text{Net Settlement} < 0$, the member pays the firm (recovering remaining loan liabilities).
+2. **View vs Edit Toggle Mode:**
+   - Once settlement details (Settlement Date and Net Amount Paid) are saved, the settlement card enters a read-only **Saved State**, locking the inputs and displaying an **Edit (`సవరించు`)** button.
+   - Clicking **Edit** re-enables the settlement date picker and payment amount inputs for adjustments.
+
+### 7.3. Reopening an RD Account (`handleReopenRD`)
+- Closed members can be seamlessly reinstated to active status via the **"తిరిగి కొనసాగించు"** button.
+- Reopening executes the following atomic transitions:
+  - Sets `member.status = 'ACTIVE'`
+  - Clears `member.closedDate = undefined`
+  - Clears `member.settlementDate = undefined`
+  - Clears `member.settlementAmountPaid = undefined`
+  - Sanitizes in-memory database (`JSON.parse(JSON.stringify(memoryDb))`) to strip `undefined` properties before Firestore synchronization.
+  - Flushes immediately to storage (`StorageService.saveDb(db, true)`).
+
+### 7.4. Dashboard & Aggregation Financial Reconciliation for Settled Members
+1. **Active Loans & Outstanding Interest Isolation:**
+   - When a member is settled, all their loan principal and interest liabilities are factored into the final settlement equation.
+   - Therefore, the global **Total Outstanding Loan (`మొత్తం ఇవ్వాల్సిన అప్పు అసలు`)** and **Total Pending Interest (`మొత్తం రావాల్సిన వడ్డీ`)** strictly aggregate only **ACTIVE** members (`status === 'ACTIVE'`).
+2. **Future Forecast Projections:**
+   - `futureRDExpected`, `futureBonusExpected`, and `futureInterestExpected` exclude closed and matured members.
+3. **Cash in Hand Reconciliation:**
+   $$\text{Total Cash In} = \sum \text{RD Paid} + \sum \text{Principal Repaid} + \sum \text{Interest Paid} + \sum \text{Late Fees Paid}$$
+   $$\text{Total Cash Out} = \sum \text{Loans Disbursed} + \sum \text{Settlement Cash Paid to Closed Members}$$
+   $$\mathbf{\text{Cash in Hand}} = \text{Total Cash In} - \text{Total Cash Out}$$
+4. **Status Breakdown Distribution:**
+   - The status pie chart and summary blocks categorize members into 5 distinct groups:
+     - **On Time (`సమయానికి చెల్లింపు`)** — emerald
+     - **Pending (`పెండింగ్ ఉన్నవి`)** — amber
+     - **With Active Loans (`అప్పు ఉన్న సభ్యులు`)** — indigo
+     - **Matured/Completed (`పూర్తయిన చిట్టి`)** — violet
+     - **Prematurely Closed (`మద్యంతరంగా ముగిసినవి`)** — slate (`#64748b`)
 
 ---
 
